@@ -19,5 +19,6 @@ Consult the authoritative sources rather than a copied legal text:
 - [RFC 5378 / BCP 78](https://www.rfc-editor.org/rfc/rfc5378.html)
 - [Current and archived IETF Trust Legal Provisions](https://trustee.ietf.org/documents/trust-legal-provisions/)
 
-This notice describes the repository boundary; it is not legal advice and does
-not replace the notices in an individual artifact.
+This notice explains how IETF legal terms apply to material in this repository.
+It is not legal advice and does not replace the notices in an individual IETF
+document.
