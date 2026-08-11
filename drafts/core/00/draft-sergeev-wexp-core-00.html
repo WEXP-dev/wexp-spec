@@ -1,0 +1,2721 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>The Witnessed Execution Protocol (WEXP): Core Specification</title>
+<meta content="Mikhail Sergeev" name="author">
+<meta content="Vladimir Ikher" name="author">
+<meta content="
+       The Witnessed Execution Protocol (WEXP) defines a record format and a verification procedure for classifying the strength of execution-related evidence about actions performed by software and AI systems. A WEXP record asserts, for a single action, a Witnessability Level (WL) bounded by the execution-relevant boundary that the witness controls. WEXP grades only the evidentiary strength of an execution claim; it does not certify the action's correctness, safety, or alignment. This document specifies WEXP Core: the record model, required fields, the two classification axes (Witnessability Level and Conformance Class), the honesty invariants that bound claims, the verifier procedure, and failure semantics. WEXP Core is profile-independent and validates standalone. 
+    " name="description">
+<meta content="xml2rfc 3.34.0" name="generator">
+<meta content="witnessability" name="keyword">
+<meta content="execution evidence" name="keyword">
+<meta content="boundary ceiling" name="keyword">
+<meta content="AI agents" name="keyword">
+<meta content="audit" name="keyword">
+<meta content="provenance" name="keyword">
+<meta content="draft-sergeev-wexp-core-00" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.34.0
+    Python 3.12.13
+    ConfigArgParse 1.7.5
+    google-i18n-address 3.1.1
+    intervaltree 3.2.1
+    Jinja2 3.1.6
+    lxml 6.1.1
+    natsort 8.4.0
+    platformdirs 4.10.0
+    pycountry 26.2.16
+    PyYAML 6.0.3
+    requests 2.34.2
+    wcwidth 0.8.2
+    weasyprint 69.0
+-->
+<link href="draft-sergeev-wexp-core-00.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">/*
+
+  NOTE: Changes at the bottom of this file overrides some earlier settings.
+
+  Once the style has stabilized and has been adopted as an official RFC style,
+  this can be consolidated so that style settings occur only in one place, but
+  for now the contents of this file consists first of the initial CSS work as
+  provided to the RFC Formatter (xml2rfc) work, followed by itemized and
+  commented changes found necessary during the development of the v3
+  formatters.
+
+*/
+
+/* fonts */
+@import url('https://static.ietf.org/fonts/noto-sans/import.css'); /* Sans-serif */
+@import url('https://static.ietf.org/fonts/noto-serif/import.css'); /* Serif (print) */
+@import url('https://static.ietf.org/fonts/roboto-mono/import.css'); /* Monospace */
+
+:root {
+  --font-sans: 'Noto Sans', Arial, Helvetica, sans-serif;
+  --font-serif: 'Noto Serif', 'Times', 'Times New Roman', serif;
+  --font-mono: 'Roboto Mono', Courier, 'Courier New', monospace;
+}
+
+@viewport {
+  zoom: 1.0;
+}
+@-ms-viewport {
+  width: extend-to-zoom;
+  zoom: 1.0;
+}
+/* general and mobile first */
+html {
+}
+body {
+  max-width: 90%;
+  margin: 1.5em auto;
+  color: #222;
+  background-color: #fff;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  scroll-behavior: smooth;
+  overflow-wrap: break-word;
+}
+.ears {
+  display: none;
+}
+
+/* headings */
+#title, h1, h2, h3, h4, h5, h6 {
+  margin: 1em 0 0.5em;
+  font-weight: bold;
+  line-height: 1.3;
+}
+#title {
+  clear: both;
+  border-bottom: 1px solid #ddd;
+  margin: 0 0 0.5em 0;
+  padding: 1em 0 0.5em;
+}
+.author {
+  padding-bottom: 4px;
+}
+h1 {
+  font-size: 26px;
+  margin: 1em 0;
+}
+h2 {
+  font-size: 22px;
+  margin-top: -20px;  /* provide offset for in-page anchors */
+  padding-top: 33px;
+}
+h3 {
+  font-size: 18px;
+  margin-top: -36px;  /* provide offset for in-page anchors */
+  padding-top: 42px;
+}
+h4 {
+  font-size: 16px;
+  margin-top: -36px;  /* provide offset for in-page anchors */
+  padding-top: 42px;
+}
+h5, h6 {
+  font-size: 14px;
+}
+#n-copyright-notice {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 1em;
+  margin-bottom: 1em;
+}
+/* general structure */
+p {
+  padding: 0;
+  margin: 0 0 1em 0;
+  text-align: left;
+}
+div, span {
+  position: relative;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 3px;
+  padding: 1em 1em 0;
+  margin-bottom: 1.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+@media print {
+  svg {
+    max-height: 850px;
+    max-width: 660px;
+  }
+}
+svg[font-family~="serif" i], svg [font-family~="serif" i] {
+  font-family: var(--font-serif);
+}
+svg[font-family~="sans-serif" i], svg [font-family~="sans-serif" i] {
+  font-family: var(--font-sans);
+}
+svg[font-family~="monospace" i], svg [font-family~="monospace" i] {
+  font-family: var(--font-mono);
+}
+.alignCenter.art-text {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 3px;
+  padding: 1em 1em 0;
+  margin-bottom: 1.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  display: table;
+  border: none;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 1em 2em;
+}
+ol ol, ul ul, ol ul, ul ol {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+ul.ulBare, li.ulBare {
+  margin-left: 0em !important;
+}
+ul.compact, .ulCompact,
+ol.compact, .olCompact {
+  line-height: 100%;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+}
+dl > dt {
+  float: left;
+  margin-right: 1em;
+}
+/* 
+dl.nohang > dt {
+  float: none;
+}
+*/
+dl > dd {
+  margin-bottom: .8em;
+  min-height: 1.3em;
+}
+dl.compact > dd, .dlCompact > dd {
+  margin-bottom: 0em;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0em;
+}
+
+/* links */
+a {
+  text-decoration: none;
+}
+a[href] {
+  color: #22e; /* Arlen: WCAG 2019 */
+}
+a[href]:hover {
+  background-color: #f2f2f2;
+}
+figcaption a[href],
+a[href].selfRef {
+  color: #222;
+}
+/* XXX probably not this:
+a.selfRef:hover {
+  background-color: transparent;
+  cursor: default;
+} */
+
+/* Figures */
+tt, code, pre {
+  background-color: #f9f9f9;
+  font-family: var(--font-mono);
+}
+pre {
+  border: 1px solid #eee;
+  margin: 0;
+  padding: 1em;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption {
+  font-style: italic;
+  margin: 0 0 1em 0;
+}
+@media screen {
+  pre {
+    overflow-x: auto;
+    max-width: 100%;
+    max-width: calc(100% - 22px);
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 1.2em 2em;
+}
+blockquote {
+  background-color: #f9f9f9;
+  color: #111; /* Arlen: WCAG 2019 */
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  margin: 1em 0;
+}
+blockquote > *:last-child {
+  margin-bottom: 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+.xref {
+  overflow-wrap: normal;
+}
+
+/* tables */
+table {
+  width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  border: 1px solid #eee;
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5em 0.75em;
+}
+th {
+  text-align: left;
+  background-color: #e9e9e9;
+}
+tr:nth-child(2n+1) > td {
+  background-color: #f5f5f5;
+}
+table caption {
+  font-style: italic;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+table p {
+  /* XXX to avoid bottom margin on table row signifiers. If paragraphs should
+     be allowed within tables more generally, it would be far better to select on a class. */
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  color: #666; /* Arlen: AHDJ 2019 */
+  text-decoration: none;
+  visibility: hidden;
+  user-select: none;
+  -ms-user-select: none;
+  -o-user-select:none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+@media screen {
+  aside:hover > a.pilcrow,
+  p:hover > a.pilcrow,
+  blockquote:hover > a.pilcrow,
+  div:hover > a.pilcrow,
+  li:hover > a.pilcrow,
+  pre:hover > a.pilcrow {
+    visibility: visible;
+  }
+  a.pilcrow:hover {
+    background-color: transparent;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid #eee;
+}
+.bcp14 {
+  font-variant: small-caps;
+}
+
+.role {
+  font-variant: all-small-caps;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: 0.9em;
+}
+#identifiers dt {
+  width: 3em;
+  clear: left;
+}
+#identifiers dd {
+  float: left;
+  margin-bottom: 0;
+}
+/* Fix PDF info block run off issue */
+@media print {
+  #identifiers dd {
+    max-width: 100%;
+  }
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #666; /* Arlen: WCAG 2019 */
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc  {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+nav.toc ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+nav.toc li {
+  line-height: 1.3em;
+  margin: 0.75em 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 7em;
+}
+.references dd {
+  margin-left: 8em;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.refSubseries {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+.index ul {
+  margin: 0 0 0 1em;
+  padding: 0;
+  list-style: none;
+}
+.index ul ul {
+  margin: 0;
+}
+.index li {
+  margin: 0;
+  text-indent: -2em;
+  padding-left: 2em;
+  padding-bottom: 5px;
+}
+.indexIndex {
+  margin: 0.5em 0 1em;
+}
+.index a {
+  font-weight: 700;
+}
+/* make the index two-column on all but the smallest screens */
+@media (min-width: 600px) {
+  .index ul {
+    -moz-column-count: 2;
+    -moz-column-gap: 20px;
+  }
+  .index ul ul {
+    -moz-column-count: 1;
+    -moz-column-gap: 0;
+  }
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  font-family: var(--font-sans);
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+
+/* temporary notes */
+.rfcEditorRemove::before {
+  position: absolute;
+  top: 0.2em;
+  right: 0.2em;
+  padding: 0.2em;
+  content: "The RFC Editor will remove this note";
+  color: #9e2a00; /* Arlen: WCAG 2019 */
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+}
+.rfcEditorRemove {
+  position: relative;
+  padding-top: 1.8em;
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+  border-radius: 3px;
+}
+.cref {
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 1023px) {
+  body {
+    padding-top: 2em;
+  }
+  #title {
+    padding: 1em 0;
+  }
+  h1 {
+    font-size: 24px;
+  }
+  h2 {
+    font-size: 20px;
+    margin-top: -18px;  /* provide offset for in-page anchors */
+    padding-top: 38px;
+  }
+  #identifiers dd {
+    max-width: 60%;
+  }
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 0;
+    background-color: inherit;
+    border-bottom: 1px solid #ccc;
+  }
+  #toc h2 {
+    margin: -1px 0 0 0;
+    padding: 4px 0 4px 6px;
+    padding-right: 1em;
+    min-width: 190px;
+    font-size: 1.1em;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 6px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 1024px) {
+  body {
+    max-width: 724px;
+    margin: 42px auto;
+    padding-left: 1.5em;
+    padding-right: 29em;
+  }
+  #toc {
+    position: fixed;
+    top: 42px;
+    right: 42px;
+    width: 25%;
+    margin: 0;
+    padding: 0 1em;
+    z-index: 1;
+  }
+  #toc h2 {
+    border-top: none;
+    border-bottom: 1px solid #ddd;
+    font-size: 1em;
+    font-weight: normal;
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 0;
+    overflow: auto;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre {
+    page-break-inside: avoid;
+  }
+  figure {
+    overflow: scroll;
+  }
+  .breakable pre {
+    break-inside: auto;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  h2+*, h3+*, h4+*, h5+*, h6+* {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+/* This is commented out here, as the string-set: doesn't
+   pass W3C validation currently */
+/*
+.ears thead .left {
+  string-set: ears-top-left content();
+}
+
+.ears thead .center {
+  string-set: ears-top-center content();
+}
+
+.ears thead .right {
+  string-set: ears-top-right content();
+}
+
+.ears tfoot .left {
+  string-set: ears-bottom-left content();
+}
+
+.ears tfoot .center {
+  string-set: ears-bottom-center content();
+}
+
+.ears tfoot .right {
+  string-set: ears-bottom-right content();
+}
+*/
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+  /* The following is commented out here, but set appropriately by in code, as
+     the content depends on the document */
+  /*
+  @top-left {
+    content: 'Internet-Draft';
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-left {
+    content: string(ears-top-left);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-center {
+    content: string(ears-top-center);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-right {
+    content: string(ears-top-right);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @bottom-left {
+    content: string(ears-bottom-left);
+    vertical-align: top;
+    border-top: solid 1px #ccc;
+  }
+  @bottom-center {
+    content: string(ears-bottom-center);
+    vertical-align: top;
+    border-top: solid 1px #ccc;
+  }
+  @bottom-right {
+      content: '[Page ' counter(page) ']';
+      vertical-align: top;
+      border-top: solid 1px #ccc;
+  }
+  */
+
+}
+
+/* Changes introduced to fix issues found during implementation */
+/* Make sure links are clickable even if overlapped by following H* */
+a {
+  z-index: 2;
+}
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Leave room in document info to show Internet-Draft on one line */
+#identifiers dt {
+  width: 8em;
+}
+
+/* Don't waste quite as much whitespace between label and value in doc info */
+#identifiers dd {
+  margin-left: 1em;
+}
+
+/* Give floating toc a background color (needed when it's a div inside section */
+#toc {
+  background-color: white;
+}
+
+/* Make the collapsed ToC header render white on gray also when it's a link */
+@media screen and (max-width: 1023px) {
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+}
+
+/* Give the bottom of the ToC some whitespace */
+@media screen and (min-width: 1024px) {
+  #toc {
+    padding: 0 0 1em 1em;
+  }
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* prevent monospace from becoming overly large */
+tt, code, pre {
+  font-size: 95%;
+}
+
+/* Fix the height/width aspect for ascii art*/
+.sourcecode pre,
+.art-text pre {
+  line-height: 1.12;
+}
+
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin-right: 0.5em;
+}
+
+/* Fix the dl styling to match the RFC 7992 attributes */
+dl > dt,
+dl.dlParallel > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+
+/* Provide styling for table cell text alignment */
+table td.text-left,
+table th.text-left {
+  text-align: left;
+}
+table td.text-center,
+table th.text-center {
+  text-align: center;
+}
+table td.text-right,
+table th.text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 30em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Provide table alignment support.  We can't use the alignX classes above
+   since they do unwanted things with caption and other styling. */
+table.right {
+ margin-left: auto;
+ margin-right: 0;
+}
+table.center {
+ margin-left: auto;
+ margin-right: auto;
+}
+table.left {
+ margin-left: 0;
+ margin-right: auto;
+}
+
+/* Give the table caption label the same styling as the figcaption */
+caption a[href] {
+  color: #222;
+}
+
+@media print {
+  .toplink {
+    display: none;
+  }
+
+  /* avoid overwriting the top border line with the ToC header */
+  #toc {
+    padding-top: 1px;
+  }
+
+  /* Avoid page breaks inside dl and author address entries */
+  .vcard {
+    page-break-inside: avoid;
+  }
+
+}
+/* Tweak the bcp14 keyword presentation */
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+/* Tweak the invisible space above H* in order not to overlay links in text above */
+ h2 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 31px;
+ }
+ h3 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 24px;
+ }
+ h4 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 24px;
+ }
+/* Float artwork pilcrow to the right */
+@media screen {
+  .artwork a.pilcrow {
+    display: block;
+    line-height: 0.7;
+    margin-top: 0.15em;
+  }
+}
+/* Make pilcrows on dd visible */
+@media screen {
+  dd:hover > a.pilcrow {
+    visibility: visible;
+  }
+}
+/* Make the placement of figcaption match that of a table's caption
+   by removing the figure's added bottom margin */
+.alignLeft.art-text,
+.alignCenter.art-text,
+.alignRight.art-text {
+   margin-bottom: 0;
+}
+.alignLeft,
+.alignCenter,
+.alignRight {
+  margin: 1em 0 0 0;
+}
+/* In print, the pilcrow won't show on hover, so prevent it from taking up space,
+   possibly even requiring a new line */
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+/* Styling for the external metadata */
+div#external-metadata {
+  background-color: #eee;
+  padding: 0.5em;
+  margin-bottom: 0.5em;
+  display: none;
+}
+div#internal-metadata {
+  padding: 0.5em;                       /* to match the external-metadata padding */
+}
+/* Styling for title RFC Number */
+h1#rfcnum {
+  clear: both;
+  margin: 0 0 -1em;
+  padding: 1em 0 0 0;
+}
+/* Make .olPercent look the same as <ol><li> */
+dl.olPercent > dd {
+  margin-bottom: 0.25em;
+  min-height: initial;
+}
+/* Give aside some styling to set it apart */
+aside {
+  border-left: 1px solid #ddd;
+  margin: 1em 0 1em 2em;
+  padding: 0.2em 2em;
+}
+aside > dl,
+aside > ol,
+aside > ul,
+aside > table,
+aside > p {
+  margin-bottom: 0.5em;
+}
+/* Additional page break settings */
+@media print {
+  figcaption, table caption {
+    page-break-before: avoid;
+  }
+}
+/* Font size adjustments for print */
+@media print {
+  body  { font-size: 10pt;      line-height: normal; max-width: 96%; }
+  h1    { font-size: 1.72em;    padding-top: 1.5em; } /* 1*1.2*1.2*1.2 */
+  h2    { font-size: 1.44em;    padding-top: 1.5em; } /* 1*1.2*1.2 */
+  h3    { font-size: 1.2em;     padding-top: 1.5em; } /* 1*1.2 */
+  h4    { font-size: 1em;       padding-top: 1.5em; }
+  h5, h6 { font-size: 1em;      margin: initial; padding: 0.5em 0 0.3em; }
+}
+/* Sourcecode margin in print, when there's no pilcrow */
+@media print {
+  .artwork,
+  .artwork > pre,
+  .sourcecode {
+    margin-bottom: 1em;
+  }
+}
+/* Avoid narrow tables forcing too narrow table captions, which may render badly */
+table {
+  min-width: 20em;
+}
+/* ol type a */
+ol.type-a { list-style-type: lower-alpha; }
+ol.type-A { list-style-type: upper-alpha; }
+ol.type-i { list-style-type: lower-roman; }
+ol.type-I { list-style-type: upper-roman; }
+/* Apply the print table and row borders in general, on request from the RPC,
+and increase the contrast between border and odd row background slightly */
+table {
+  border: 1px solid #ddd;
+}
+td {
+  border-top: 1px solid #ddd;
+}
+tr {
+  break-inside: avoid;
+}
+tr:nth-child(2n+1) > td {
+  background-color: #f8f8f8;
+}
+/* Use style rules to govern display of the TOC. */
+@media screen and (max-width: 1023px) {
+  #toc nav { display: none; }
+  #toc.active nav { display: block; }
+}
+/* Add support for keepWithNext */
+.keepWithNext {
+  break-after: avoid-page;
+  break-after: avoid-page;
+}
+/* Add support for keepWithPrevious */
+.keepWithPrevious {
+  break-before: avoid-page;
+}
+/* Change the approach to avoiding breaks inside artwork etc. */
+figure, pre, table, .artwork, .sourcecode  {
+  break-before: auto;
+  break-after: auto;
+}
+/* Avoid breaks between <dt> and <dd> */
+dl {
+  break-before: auto;
+  break-inside: auto;
+}
+dt {
+  break-before: auto;
+  break-after: avoid-page;
+}
+dd {
+  break-before: avoid-page;
+  break-after: auto;
+  orphans: 3;
+  widows: 3
+}
+span.break, dd.break {
+  margin-bottom: 0;
+  min-height: 0;
+  break-before: auto;
+  break-inside: auto;
+  break-after: auto;
+}
+/* Undo break-before ToC */
+@media print {
+  #toc {
+    break-before: auto;
+  }
+}
+/* Text in compact lists should not get extra bottom margin space,
+   since that would makes the list not compact */
+ul.compact p, .ulCompact p,
+ol.compact p, .olCompact p {
+ margin: 0;
+}
+/* But the list as a whole needs the extra space at the end */
+section ul.compact,
+section .ulCompact,
+section ol.compact,
+section .olCompact {
+  margin-bottom: 1em;                    /* same as p not within ul.compact etc. */
+}
+/* The tt and code background above interferes with for instance table cell
+   backgrounds.  Changed to something a bit more selective. */
+tt, code {
+  background-color: transparent;
+}
+p tt, p code, li tt, li code, dt tt, dt code {
+  background-color: #f8f8f8;
+}
+/* Tweak the pre margin -- 0px doesn't come out well */
+pre {
+   margin-top: 0.5px;
+}
+/* Tweak the compact list text */
+ul.compact, .ulCompact,
+ol.compact, .olCompact,
+dl.compact, .dlCompact {
+  line-height: normal;
+}
+/* Don't add top margin for nested lists */
+li > ul, li > ol, li > dl,
+dd > ul, dd > ol, dd > dl,
+dl > dd > dl {
+  margin-top: initial;
+}
+/* Elements that should not be rendered on the same line as a <dt> */
+/* This should match the element list in writer.text.TextWriter.render_dl() */
+dd > div.artwork:first-child,
+dd > aside:first-child,
+dd > blockquote:first-child,
+dd > figure:first-child,
+dd > ol:first-child,
+dd > div.sourcecode:first-child,
+dd > table:first-child,
+dd > ul:first-child {
+  clear: left;
+}
+/* fix for weird browser behaviour when <dd/> is empty */
+dt+dd:empty::before{
+  content: "\00a0";
+}
+/* Make paragraph spacing inside <li> smaller than in body text, to fit better within the list */
+li > p {
+  margin-bottom: 0.5em
+}
+/* Don't let p margin spill out from inside list items */
+li > p:last-of-type:only-child {
+  margin-bottom: 0;
+}
+</style>
+<link href="rfc-local.css" rel="stylesheet" type="text/css">
+<script type="application/javascript">async function addMetadata(){try{const e=document.styleSheets[0].cssRules;for(let t=0;t<e.length;t++)if(/#identifiers/.exec(e[t].selectorText)){const a=e[t].cssText.replace("#identifiers","#external-updates");document.styleSheets[0].insertRule(a,document.styleSheets[0].cssRules.length)}}catch(e){console.log(e)}const e=document.getElementById("external-metadata");if(e)try{var t,a="",o=function(e){const t=document.getElementsByTagName("meta");for(let a=0;a<t.length;a++)if(t[a].getAttribute("name")===e)return t[a].getAttribute("content");return""}("rfc.number");if(o){t="https://www.rfc-editor.org/rfc/rfc"+o+".json";try{const e=await fetch(t);a=await e.json()}catch(e){t=document.URL.indexOf("html")>=0?document.URL.replace(/html$/,"json"):document.URL+".json";const o=await fetch(t);a=await o.json()}}if(!a)return;e.style.display="block";const s="",d="https://datatracker.ietf.org/doc",n="https://datatracker.ietf.org/ipr/search",c="https://www.rfc-editor.org/info",l=a.doc_id.toLowerCase(),i=a.doc_id.slice(0,3).toLowerCase(),f=a.doc_id.slice(3).replace(/^0+/,""),u={status:"Status",obsoletes:"Obsoletes",obsoleted_by:"Obsoleted By",updates:"Updates",updated_by:"Updated By",see_also:"See Also",errata_url:"Errata"};let h="<dl style='overflow:hidden' id='external-updates'>";["status","obsoletes","obsoleted_by","updates","updated_by","see_also","errata_url"].forEach(e=>{if("status"==e){a[e]=a[e].toLowerCase();var t=a[e].split(" "),o=t.length,w="",p=1;for(let e=0;e<o;e++)p<o?w=w+r(t[e])+" ":w+=r(t[e]),p++;a[e]=w}else if("obsoletes"==e||"obsoleted_by"==e||"updates"==e||"updated_by"==e){var g,m="",b=1;g=a[e].length;for(let t=0;t<g;t++)a[e][t]&&(a[e][t]=String(a[e][t]).toLowerCase(),m=b<g?m+"<a href='"+s+"/rfc/".concat(a[e][t])+"'>"+a[e][t].slice(3)+"</a>, ":m+"<a href='"+s+"/rfc/".concat(a[e][t])+"'>"+a[e][t].slice(3)+"</a>",b++);a[e]=m}else if("see_also"==e){var y,L="",C=1;y=a[e].length;for(let t=0;t<y;t++)if(a[e][t]){a[e][t]=String(a[e][t]);var _=a[e][t].slice(0,3),v=a[e][t].slice(3).replace(/^0+/,"");L=C<y?"RFC"!=_?L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+_+" "+v+"</a>, ":L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+v+"</a>, ":"RFC"!=_?L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+_+" "+v+"</a>":L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+v+"</a>",C++}a[e]=L}else if("errata_url"==e){var R="";R=a[e]?R+"<a href='"+a[e]+"'>Errata exist</a> | <a href='"+d+"/"+l+"'>Datatracker</a>| <a href='"+n+"/?"+i+"="+f+"&submit="+i+"'>IPR</a> | <a href='"+c+"/"+l+"'>Info page</a>":"<a href='"+d+"/"+l+"'>Datatracker</a> | <a href='"+n+"/?"+i+"="+f+"&submit="+i+"'>IPR</a> | <a href='"+c+"/"+l+"'>Info page</a>",a[e]=R}""!=a[e]?"Errata"==u[e]?h+=`<dt>More info:</dt><dd>${a[e]}</dd>`:h+=`<dt>${u[e]}:</dt><dd>${a[e]}</dd>`:"Errata"==u[e]&&(h+=`<dt>More info:</dt><dd>${a[e]}</dd>`)}),h+="</dl>",e.innerHTML=h}catch(e){console.log(e)}else console.log("Could not locate metadata <div> element");function r(e){return e.charAt(0).toUpperCase()+e.slice(1)}}window.removeEventListener("load",addMetadata),window.addEventListener("load",addMetadata);</script>
+</head>
+<body class="xml2rfc">
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">WEXP Core</td>
+<td class="right">July 2026</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Sergeev &amp; Ikher</td>
+<td class="center">Expires 6 January 2027</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">Network Working Group</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-sergeev-wexp-core-00</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2026-07-05" class="published">5 July 2026</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Informational</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2027-01-06">6 January 2027</time></dd>
+<dt class="label-authors">Authors:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">M. Sergeev, <span class="editor">Ed.</span>
+</div>
+<div class="org">Independent Researcher</div>
+</div>
+<div class="author">
+      <div class="author-name">V. Ikher</div>
+<div class="org">Independent Researcher</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">The Witnessed Execution Protocol (WEXP): Core Specification</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">The Witnessed Execution Protocol (WEXP) defines a record format and a verification procedure for classifying the strength of execution-related evidence about actions performed by software and AI systems. A WEXP record asserts, for a single action, a Witnessability Level (WL) bounded by the execution-relevant boundary that the witness controls. WEXP grades only the evidentiary strength of an execution claim; it does not certify the action's correctness, safety, or alignment. This document specifies WEXP Core: the record model, required fields, the two classification axes (Witnessability Level and Conformance Class), the honesty invariants that bound claims, the verifier procedure, and failure semantics. WEXP Core is profile-independent and validates standalone.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 6 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2026 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Revised BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Revised BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-note-to-readers-to-be-remov" class="internal xref">Note to Readers (to be removed before publication)</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
+                <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-scope" class="internal xref">Scope</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2">
+                <p id="section-toc.1-1.2.2.2.1" class="keepWithNext"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-relationship-to-related-wor" class="internal xref">Relationship to Related Work</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-conventions-and-terminology" class="internal xref">Conventions and Terminology</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-witnessability-level-wl-and" class="internal xref">Witnessability Level (WL) and Conformance Class (CC)</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-conformance-class-cc-scale" class="internal xref">Conformance Class (CC) scale</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1.2.1">
+                    <p id="section-toc.1-1.4.2.1.2.1.1"><a href="#section-4.1.1" class="auto internal xref">4.1.1</a>.  <a href="#name-implementation-capability-c" class="internal xref">Implementation capability ceiling</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-record-model" class="internal xref">Record Model</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-core-record-fields" class="internal xref">Core Record Fields</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="auto internal xref">6.1</a>.  <a href="#name-conditional-required-fields" class="internal xref">Conditional-required fields by claimed level</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-core-record-schema-cddl" class="internal xref">Core Record schema (CDDL)</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-honesty-invariants-ceilings" class="internal xref">Honesty Invariants (Ceilings)</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-boundary-ceiling-must" class="internal xref">Boundary Ceiling (MUST)</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-recorder-ceiling-must-when-" class="internal xref">Recorder Ceiling (MUST when asserted)</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3">
+                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-minimal-evidence-floor-shou" class="internal xref">Minimal Evidence floor (SHOULD)</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4">
+                <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-evidence-is-required-not-im" class="internal xref">Evidence is required, not implied</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4.2.1">
+                    <p id="section-toc.1-1.7.2.4.2.1.1"><a href="#section-7.4.1" class="auto internal xref">7.4.1</a>.  <a href="#name-wl4-attainability" class="internal xref">WL4 attainability</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-verifier-requirements" class="internal xref">Verifier Requirements</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.1">
+                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="auto internal xref">8.1</a>.  <a href="#name-verifier-result-and-verdict" class="internal xref">Verifier result and verdict</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2">
+                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="auto internal xref">8.2</a>.  <a href="#name-composition" class="internal xref">Composition</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2.2.1">
+                    <p id="section-toc.1-1.8.2.2.2.1.1"><a href="#section-8.2.1" class="auto internal xref">8.2.1</a>.  <a href="#name-downgrade-target-for-missin" class="internal xref">Downgrade target for missing required evidence</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3">
+                <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="auto internal xref">8.3</a>.  <a href="#name-safe-failure" class="internal xref">Safe failure</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref">9</a>.  <a href="#name-implementation-status" class="internal xref">Implementation Status</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref">10</a>. <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#section-11" class="auto internal xref">11</a>. <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.1">
+                <p id="section-toc.1-1.11.2.1.1"><a href="#section-11.1" class="auto internal xref">11.1</a>.  <a href="#name-wexp-boundary-types" class="internal xref">WEXP Boundary Types</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.2">
+                <p id="section-toc.1-1.11.2.2.1"><a href="#section-11.2" class="auto internal xref">11.2</a>.  <a href="#name-wexp-error-codes" class="internal xref">WEXP Error Codes</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.3">
+                <p id="section-toc.1-1.11.2.3.1"><a href="#section-11.3" class="auto internal xref">11.3</a>.  <a href="#name-wexp-profiles-reserved" class="internal xref">WEXP Profiles (reserved)</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12">
+            <p id="section-toc.1-1.12.1"><a href="#section-12" class="auto internal xref">12</a>. <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.1">
+                <p id="section-toc.1-1.12.2.1.1"><a href="#section-12.1" class="auto internal xref">12.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.2">
+                <p id="section-toc.1-1.12.2.2.1"><a href="#section-12.2" class="auto internal xref">12.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13">
+            <p id="section-toc.1-1.13.1"><a href="#appendix-A" class="auto internal xref">Appendix A</a>.  <a href="#name-scitt-mapping-wl4-wl5" class="internal xref">SCITT Mapping (WL4-WL5)</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14">
+            <p id="section-toc.1-1.14.1"><a href="#appendix-B" class="auto internal xref">Appendix B</a>.  <a href="#name-mapping-to-the-ai-agent-aud" class="internal xref">Mapping to the AI Agent Audit Architecture</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14.2.1">
+                <p id="section-toc.1-1.14.2.1.1"><a href="#appendix-B.1" class="auto internal xref">B.1</a>.  <a href="#name-contribution-points-wexp-su" class="internal xref">Contribution points (WEXP supplies what the data models do not define)</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14.2.2">
+                <p id="section-toc.1-1.14.2.2.1"><a href="#appendix-B.2" class="auto internal xref">B.2</a>.  <a href="#name-composition-points-wexp-con" class="internal xref">Composition points (WEXP consumes an existing substrate; no core semantics added)</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14.2.3">
+                <p id="section-toc.1-1.14.2.3.1"><a href="#appendix-B.3" class="auto internal xref">B.3</a>.  <a href="#name-record-role-mapping" class="internal xref">Record/role mapping</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15">
+            <p id="section-toc.1-1.15.1"><a href="#appendix-C" class="auto internal xref">Appendix C</a>.  <a href="#name-design-rationale-non-normat" class="internal xref">Design Rationale (non-normative)</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.16">
+            <p id="section-toc.1-1.16.1"><a href="#appendix-D" class="auto internal xref">Appendix D</a>.  <a href="#name-disclosure" class="internal xref">Disclosure</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.17">
+            <p id="section-toc.1-1.17.1"><a href="#appendix-E" class="auto internal xref"></a><a href="#name-authors-addresses" class="internal xref">Authors' Addresses</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="notetoreaders">
+<section id="section-1">
+      <h2 id="name-note-to-readers-to-be-remov">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-note-to-readers-to-be-remov" class="section-name selfRef">Note to Readers (to be removed before publication)</a>
+      </h2>
+<p id="section-1-1">The archival deposit of this specification is intended to be made available under CC BY 4.0; the IETF Internet-Draft is contributed under the IETF Trust's Legal Provisions (see the boilerplate). The reference implementation is being developed by WitSeal; no co-author or party holds ownership, licensing exclusivity, or veto rights over the specification.<a href="#section-1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="introduction">
+<section id="section-2">
+      <h2 id="name-introduction">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-2-1">Modern AI and software systems produce many forms of execution-related evidence -- logs, traces, approvals, tool-call records, attestations, workflow histories -- that are frequently conflated. The conceptual foundation for distinguishing the <em>strength</em> of such evidence is the Witnessability Model <span>[<a href="#WITNESSABILITY" class="cite xref">WITNESSABILITY</a>]</span>, which defines six witnessability levels (WL0-WL5) and the Boundary Ceiling Principle: a witness cannot honestly claim a level above the strongest execution-relevant boundary it controls or can independently verify.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<p id="section-2-2">WEXP operationalizes that model as a concrete, verifiable record protocol. Where the model is descriptive, WEXP is prescriptive: it defines what a conforming record MUST contain at each claimed level, and what a conforming verifier MUST check.<a href="#section-2-2" class="pilcrow">¶</a></p>
+<p id="section-2-3">Attestation answers whether a record is authentic; a transparency service answers whether it existed as claimed. WEXP answers a third question that neither resolves: given the available evidence and the boundary at which it was obtained, what claim level is warranted? A related individual Internet-Draft proposes an architecture for auditing AI-agent delegation and interactions <span>[<a href="#AUDIT-ARCH" class="cite xref">AUDIT-ARCH</a>]</span>, whose proposed work items include canonical audit data models and semantics (WI-1) and an Action Record profile produced at the boundary where each tool or service call took effect (WI-4). That architecture records, correlates, and attests audit records across delegation and evolving authorization state; it does not define the evidential-status semantics that bound what such a record may honestly claim about execution. WEXP supplies that layer: a boundary-derived claim ceiling (verified_level &lt;= attainable(boundary_type, claimed_level, evidence)), a verifier verdict of accept, reject, or downgrade, non-inflation under composition, and fail-closed handling of unknown-critical content. WEXP is therefore an orthogonal contribution to such audit data models -- specifically the claimed-level and ceiling semantics for Action Records -- not a competing audit architecture or data model.<a href="#section-2-3" class="pilcrow">¶</a></p>
+<p id="section-2-4">WEXP intentionally separates three concerns that are often conflated: (1) where an action is observed, (2) how authentic the resulting record is, and (3) what evidential claim that record can honestly support.<a href="#section-2-4" class="pilcrow">¶</a></p>
+<p id="section-2-5">This document is differentiated by treating the boundary-derived ceiling as a verifier-enforced protocol invariant, rather than as an audit placement rule, attestation result, or transparency receipt. WEXP makes no chronological priority claim.<a href="#section-2-5" class="pilcrow">¶</a></p>
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-2-6.1">
+          <p id="section-2-6.1.1">Reference Implementation Non-Authority Clause. Where a reference implementation conflicts with this specification, the specification prevails. Where the specification is ambiguous, a resolution document is required before implementation behavior becomes normative.<a href="#section-2-6.1.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<div id="scope">
+<section id="section-2.1">
+        <h3 id="name-scope">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-scope" class="section-name selfRef">Scope</a>
+        </h3>
+<p id="section-2.1-1">This document specifies WEXP Core only. Profiles (domain-specific bindings) and Policy (Evidence Contract gating) are layered above Core and are out of scope here, except where Core constrains them. A Core record MUST validate without reference to any profile.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-2">To bound Core precisely, the following are explicitly out of scope for this document and are left to profiles or future revisions:<a href="#section-2.1-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2.1-3.1">
+            <p id="section-2.1-3.1.1">This document does not define a COSE or JWS envelope profile.<a href="#section-2.1-3.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-3.2">
+            <p id="section-2.1-3.2.1">This document does not define internal provenance or independent-verification evidence schemas.<a href="#section-2.1-3.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-3.3">
+            <p id="section-2.1-3.3.1">This document does not define trust-anchor discovery or revocation.<a href="#section-2.1-3.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-3.4">
+            <p id="section-2.1-3.4.1">This document does not define chain construction, segment discovery, or delegation linkage.<a href="#section-2.1-3.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-2.1-3.5">
+            <p id="section-2.1-3.5.1">This document does not define a capabilities-document format beyond the fail-closed handling of <code>capabilities_ref</code> (<a href="#cc-maxcap" class="auto internal xref">Section 4.1.1</a>).<a href="#section-2.1-3.5.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-2.1-4">These deferred items are expected to be addressed by separate WEXP profiles, developed independently of and layered above this Core document. Such profiles are anticipated to bind WEXP records to existing mechanisms rather than re-specify them -- for example, a JOSE or COSE serialization profile, a boundary-grounding profile referencing RATS attestation evidence, provenance and independent-verification profiles aligned with supply-chain and transparency work (for example, <span>[<a href="#SCITT" class="cite xref">SCITT</a>]</span>), and deployment profiles that map WEXP evidence onto external record-keeping regimes. These profiles are informative with respect to this document: they extend and depend on Core, but a Core record is complete and verifiable without any of them (<a href="#verifier" class="auto internal xref">Section 8</a>).<a href="#section-2.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="relatedwork">
+<section id="section-2.2">
+        <h3 id="name-relationship-to-related-wor">
+<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-relationship-to-related-wor" class="section-name selfRef">Relationship to Related Work</a>
+        </h3>
+<p id="section-2.2-1"><span>[<a href="#AUDIT-ARCH" class="cite xref">AUDIT-ARCH</a>]</span> describes an architectural framework for distributed audit-record generation, audit-context propagation, attestation, and transparency logging in agent-driven interactions, and identifies candidate record types and IETF substrate profiles (RATS, SCITT, OAuth, WIMSE). It independently arrives at recorder independence (a record produced at the boundary, not as reported by the agent; an agent that records itself cannot deliver non-repudiation to a third party). WEXP is complementary: it does not define an agent audit architecture, an identity substrate, or a transparency service. It defines verifier-facing evidence-to-claim semantics -- the boundary-derived claim ceiling, the accept/reject/downgrade verdict, non-inflation, and fail-closed handling -- that <span>[<a href="#AUDIT-ARCH" class="cite xref">AUDIT-ARCH</a>]</span> does not specify. In <span>[<a href="#AUDIT-ARCH" class="cite xref">AUDIT-ARCH</a>]</span> terms these belong in WI-1 as the claimed-level and ceiling semantics the data models require but do not define, with the WI-4 Action Record profile carrying the claimed level.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2-2">A parallel line of work, <span>[<a href="#ACTA-RECEIPTS" class="cite xref">ACTA-RECEIPTS</a>]</span>, defines a portable signed receipt format for machine-to-machine access-control decisions. A subsequent profile, <span>[<a href="#ASQAV-COMPLIANCE" class="cite xref">ASQAV-COMPLIANCE</a>]</span>, binds <span>[<a href="#ACTA-RECEIPTS" class="cite xref">ACTA-RECEIPTS</a>]</span> fields to specific regulatory obligations including EU AI Act Articles 12 and 26 and DORA Article 17. WEXP is complementary to both: <span>[<a href="#ACTA-RECEIPTS" class="cite xref">ACTA-RECEIPTS</a>]</span> specifies a wire format and verification procedure for signed decision records; WEXP specifies the <em>evidential-status semantics</em> -- the boundary-derived claim ceiling, the verifier verdict of accept/reject/downgrade, non-inflation under composition, and fail-closed handling of unknown-critical content -- that bound what claim level any such record can honestly support. A WEXP record MAY be carried as an artifact in the <span>[<a href="#ACTA-RECEIPTS" class="cite xref">ACTA-RECEIPTS</a>]</span> format. Where an ACTA or ASQAV receipt carries a correlation identifier such as <code>action_ref</code>, a WEXP profile MAY use that value as a correlation hint between the receipt and the WEXP record witnessing the same action; such correlation is not execution evidence, is not required by WEXP Core, and does not raise the verified level. The WEXP layer adds the claim-strength semantics that the receipt format itself does not specify. WEXP defines no transparency service, no identity substrate, and no decision-recording wire format of its own -- it is the evidential-status layer over such substrates.<a href="#section-2.2-2" class="pilcrow">¶</a></p>
+<p id="section-2.2-3">Additional Internet-Drafts in adjacent slots include <span>[<a href="#AGENT-AUDIT-TRAIL" class="cite xref">AGENT-AUDIT-TRAIL</a>]</span>, which specifies a hash-chained logging format with trust outcome levels, and <span>[<a href="#VERIFICATION-STATE" class="cite xref">VERIFICATION-STATE</a>]</span>, which specifies a pre-action fail-closed gate primitive that may be wrapped in a <span>[<a href="#SCITT" class="cite xref">SCITT</a>]</span> envelope. WEXP is complementary to these: <span>[<a href="#AGENT-AUDIT-TRAIL" class="cite xref">AGENT-AUDIT-TRAIL</a>]</span> specifies how audit records are stored and chained; <span>[<a href="#VERIFICATION-STATE" class="cite xref">VERIFICATION-STATE</a>]</span> specifies a gate primitive applied before action execution. WEXP specifies the claim-strength taxonomy that bounds what any such record or gate-result may honestly assert, and the verifier ladder that enforces it.<a href="#section-2.2-3" class="pilcrow">¶</a></p>
+<p id="section-2.2-4">Further adjacent drafts include <span>[<a href="#VAC" class="cite xref">VAC</a>]</span>, a conversation-record format for agent sessions with post-hoc divergence detection; <span>[<a href="#POB" class="cite xref">POB</a>]</span>, which combines signed behavior receipts, hash-chain linking, and a pre-execution policy gate; and <span>[<a href="#DRP" class="cite xref">DRP</a>]</span>, which specifies pre-action delegation receipts anchored to an append-only log -- an authorization-plane object attesting what was authorized rather than what occurred. WEXP defines none of these objects; it defines the claim-strength semantics that bound what any such record, gate result, or delegation trace may honestly assert.<a href="#section-2.2-4" class="pilcrow">¶</a></p>
+<p id="section-2.2-5">Two adjacent level schemes deserve explicit contrast. SLSA <span>[<a href="#SLSA" class="cite xref">SLSA</a>]</span> defines graduated build-integrity levels for the software supply chain: as in WEXP, a claim is bounded by the strength of the platform boundary that produced the evidence, but SLSA grades the build provenance of artifacts, not runtime execution events -- WEXP applies the same discipline to runtime actions, and a SLSA provenance statement is one natural source of the WL4 provenance artifact. Within the IETF, RATS Attestation Results for Secure Interactions <span>[<a href="#AR4SI" class="cite xref">AR4SI</a>]</span> grades the trustworthiness of an attested environment from appraised evidence; WEXP grades the claim strength of an execution-event record, with environment attestation as one input that can raise the attainable level (<a href="#appendix-audit" class="auto internal xref">Appendix B</a>). Neither scheme defines a claim ceiling bound to the execution boundary of a specific action; that is the layer WEXP specifies.<a href="#section-2.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="terminology">
+<section id="section-3">
+      <h2 id="name-conventions-and-terminology">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-conventions-and-terminology" class="section-name selfRef">Conventions and Terminology</a>
+      </h2>
+<p id="section-3-1">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they appear in all capitals, as shown here.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3-2.1">
+          <p id="section-3-2.1.1"><strong>Witness.</strong> A system, component, runtime, service, process, organization, or verifier that records or verifies evidence about an action.<a href="#section-3-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-3-2.2">
+          <p id="section-3-2.2.1"><strong>Action.</strong> An operation performed by a software or AI system that changes state, produces output, invokes a tool, executes code, or otherwise affects an environment.<a href="#section-3-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-3-2.3">
+          <p id="section-3-2.3.1"><strong>Boundary.</strong> A control surface across which an action is observed, approved, invoked, executed, linked to provenance, or verified.<a href="#section-3-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-3-2.4">
+          <p id="section-3-2.4.1"><strong>WEXP Record.</strong> A structured artifact conforming to this specification that asserts an execution-evidence claim at a stated Witnessability Level.<a href="#section-3-2.4.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-3-2.5">
+          <p id="section-3-2.5.1"><strong>Witnessability Level (WL).</strong> A record-scoped level, WL0-WL5, expressing how deeply the runtime action is witnessed through the execution boundary (see <span>[<a href="#WITNESSABILITY" class="cite xref">WITNESSABILITY</a>]</span> for the model).<a href="#section-3-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-3-2.6">
+          <p id="section-3-2.6.1"><strong>Conformance Class (CC).</strong> An implementation-scoped class, CC0-CC5, expressing how technically verifiable a record is.<a href="#section-3-2.6.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-3-3">Relationship to WIMSE: WEXP and its reference implementation are distinct from the WIMSE Workload Identity Credential (WIT) <span>[<a href="#WIMSE" class="cite xref">WIMSE</a>]</span>. A bounded-claim execution record is evidence about what occurred at a boundary, not a workload identity credential, and does not replace WIT.<a href="#section-3-3" class="pilcrow">¶</a></p>
+<p id="section-3-4"><strong>Note on Witnessability Level (WL) Versus Other Level Schemes.</strong> Numbered trust levels and graded conformance tiers appear in adjacent specifications and informal industry discussion (for example, trust outcome levels in <span>[<a href="#AGENT-AUDIT-TRAIL" class="cite xref">AGENT-AUDIT-TRAIL</a>]</span>, Bronze/Silver/Gold conformance tiers in <span>[<a href="#VAP-LAP" class="cite xref">VAP-LAP</a>]</span>, and the multi-layer agent trust models discussed in industry analyses). These schemes classify outcome quality, infrastructure capability, or authorization-stack position. WEXP WL is distinct: it classifies the <em>claim-strength</em> that a record can honestly support given the <em>boundary</em> at which the evidence was produced. WL is an <em>epistemic ceiling</em> on what a witness may assert, not a trust rating, infrastructure grade, authorization tier, or maturity score. A WL3 record is not "more trusted" than a WL1 record; it is a claim about a stronger execution-evidence boundary having been controlled or independently verified. Whether a particular witness is honest or compromised is a question of attribution and grounding, not of the level taxonomy: the boundary assertion, its CC-bound attribution, and their limits are specified in <a href="#honesty-evidence" class="auto internal xref">Section 7.4</a>.<a href="#section-3-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="wl-cc">
+<section id="section-4">
+      <h2 id="name-witnessability-level-wl-and">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-witnessability-level-wl-and" class="section-name selfRef">Witnessability Level (WL) and Conformance Class (CC)</a>
+      </h2>
+<p id="section-4-1">WEXP separates two orthogonal axes.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<p id="section-4-2">The Core interpretation of each Witnessability Level, used by the verifier, is:<a href="#section-4-2" class="pilcrow">¶</a></p>
+<table class="center" id="table-1">
+        <caption><a href="#table-1" class="selfRef">Table 1</a></caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">WL</th>
+            <th class="text-left" rowspan="1" colspan="1">Core interpretation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WL0</td>
+            <td class="text-left" rowspan="1" colspan="1">No execution-evidence claim is verified.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WL1</td>
+            <td class="text-left" rowspan="1" colspan="1">Intent or approval is bound to the action arguments.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WL2</td>
+            <td class="text-left" rowspan="1" colspan="1">Invocation crossed an observed boundary.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WL3</td>
+            <td class="text-left" rowspan="1" colspan="1">Execution was observed at an execution-ownership boundary.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WL4</td>
+            <td class="text-left" rowspan="1" colspan="1">WL3 plus a bound top-level provenance artifact.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WL5</td>
+            <td class="text-left" rowspan="1" colspan="1">WL3 plus a bound top-level independent-verification artifact.</td>
+          </tr>
+        </tbody>
+      </table>
+<p id="section-4-4">This table defines the Core interpretation used by the verifier. It does not define provenance, attestation, independent-verification, policy, or trust-anchor schemas.<a href="#section-4-4" class="pilcrow">¶</a></p>
+<p id="section-4-5">WL4 and WL5 are sibling evidence lifts over the WL3 base: WL4 adds a bound provenance artifact, WL5 a bound independent-verification artifact. WL5 is ordered above WL4 for verifier ceiling comparison (<a href="#verifier" class="auto internal xref">Section 8</a>), but a WL5 claim does not imply the presence of a provenance artifact unless required by a profile or policy. A policy that requires provenance MUST require it explicitly and MUST NOT infer it from <code>verified_level</code> &gt;= WL4.<a href="#section-4-5" class="pilcrow">¶</a></p>
+<p id="section-4-6"><strong>Witnessability Level (WL)</strong> is <em>record-scoped</em>: it describes how deeply a specific runtime action is witnessed through the execution boundary. WL ranges over WL0-WL5 as defined by the Witnessability Model.<a href="#section-4-6" class="pilcrow">¶</a></p>
+<p id="section-4-7"><strong>Conformance Class (CC)</strong> is <em>implementation-scoped</em>: it describes how technically verifiable a record is, independent of any single record's content. CC ranges over CC0-CC5. CC MUST NOT be a per-record self-claim; it is reachable only by reference (via a <code>capabilities_ref</code> to the implementation's published capabilities).<a href="#section-4-7" class="pilcrow">¶</a></p>
+<p id="section-4-8">Criticality, reversibility, operational domain, and custody are not axes of WEXP. They MAY influence the minimum required WL or CC via policy or profiles, but they are not witnessability levels and MUST NOT be encoded as such.<a href="#section-4-8" class="pilcrow">¶</a></p>
+<div id="cc-scale">
+<section id="section-4.1">
+        <h3 id="name-conformance-class-cc-scale">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-conformance-class-cc-scale" class="section-name selfRef">Conformance Class (CC) scale</a>
+        </h3>
+<p id="section-4.1-1">Conformance Class is implementation-scoped and ranges over CC0-CC5. CC
+describes how technically verifiable an implementation's records are; it
+MUST NOT be a per-record self-claim and is reachable only by reference,
+via a <code>capabilities_ref</code> to the implementation's published capabilities.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<table class="center" id="table-2">
+          <caption><a href="#table-2" class="selfRef">Table 2</a></caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">CC</th>
+              <th class="text-left" rowspan="1" colspan="1">Name</th>
+              <th class="text-left" rowspan="1" colspan="1">Requirement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">CC0</td>
+              <td class="text-left" rowspan="1" colspan="1">No conformance</td>
+              <td class="text-left" rowspan="1" colspan="1">The implementation does not meet WEXP structural requirements.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">CC1</td>
+              <td class="text-left" rowspan="1" colspan="1">Structural</td>
+              <td class="text-left" rowspan="1" colspan="1">The implementation emits records that validate against the Core schema.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">CC2</td>
+              <td class="text-left" rowspan="1" colspan="1">Signature</td>
+              <td class="text-left" rowspan="1" colspan="1">The implementation additionally emits records that carry a valid signature over the canonical signing input, per <code>seal.alg</code> (<a href="#verifier" class="auto internal xref">Section 8</a>).</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">CC3</td>
+              <td class="text-left" rowspan="1" colspan="1">Bound</td>
+              <td class="text-left" rowspan="1" colspan="1">The implementation additionally binds each signature to a verified key identity; at CC3 and above a <code>boundary_type</code> assertion is attributed to that identity (stronger grounding of the assertion is out of scope for Core; see <a href="#honesty-evidence" class="auto internal xref">Section 7.4</a>).</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">CC4</td>
+              <td class="text-left" rowspan="1" colspan="1">Composed</td>
+              <td class="text-left" rowspan="1" colspan="1">The implementation additionally verifies chains under composition without inflation (see <a href="#verifier-composition" class="auto internal xref">Section 8.2</a>).</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">CC5</td>
+              <td class="text-left" rowspan="1" colspan="1">Independent</td>
+              <td class="text-left" rowspan="1" colspan="1">The implementation additionally produces records independently verifiable by a third party without the issuer.</td>
+            </tr>
+          </tbody>
+        </table>
+<p id="section-4.1-3">The classes are cumulative: CCn includes the capabilities of CCn-1. CC is
+orthogonal to a record's Witnessability Level: a high-CC implementation MAY
+emit low-WL records.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
+<div id="cc-maxcap">
+<section id="section-4.1.1">
+          <h4 id="name-implementation-capability-c">
+<a href="#section-4.1.1" class="section-number selfRef">4.1.1. </a><a href="#name-implementation-capability-c" class="section-name selfRef">Implementation capability ceiling</a>
+          </h4>
+<p id="section-4.1.1-1">Each Conformance Class has a maximum Witnessability Level it can ground,
+maxCapability(CC):<a href="#section-4.1.1-1" class="pilcrow">¶</a></p>
+<table class="center" id="table-3">
+            <caption><a href="#table-3" class="selfRef">Table 3</a></caption>
+<thead>
+              <tr>
+                <th class="text-left" rowspan="1" colspan="1">CC</th>
+                <th class="text-left" rowspan="1" colspan="1">maxCapability(CC)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">CC0</td>
+                <td class="text-left" rowspan="1" colspan="1">WL0</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">CC1</td>
+                <td class="text-left" rowspan="1" colspan="1">WL0</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">CC2</td>
+                <td class="text-left" rowspan="1" colspan="1">WL2</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">CC3</td>
+                <td class="text-left" rowspan="1" colspan="1">WL3</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">CC4</td>
+                <td class="text-left" rowspan="1" colspan="1">WL4</td>
+              </tr>
+              <tr>
+                <td class="text-left" rowspan="1" colspan="1">CC5</td>
+                <td class="text-left" rowspan="1" colspan="1">WL5</td>
+              </tr>
+            </tbody>
+          </table>
+<p id="section-4.1.1-3">The full Boundary Ceiling invariant (<a href="#honesty-boundary" class="auto internal xref">Section 7.1</a>) therefore caps a
+claim by BOTH the boundary-and-evidence attainable level and the
+implementation Conformance Class:<a href="#section-4.1.1-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.1.1-4">
+<pre>
+verified_level &lt;= min(
+    attainable(boundary_type, claimed_level, evidence),
+    maxCapability(CC) )
+</pre><a href="#section-4.1.1-4" class="pilcrow">¶</a>
+</div>
+<p id="section-4.1.1-5">A verifier MUST enforce both bounds; a high-capability boundary does not raise a
+record above the issuing implementation's Conformance Class. For example, a
+record claiming WL4 at a <code>tee</code> boundary with a bound provenance artifact, from a
+CC3 implementation (maxCapability WL3), is bounded by min(WL4, WL3) = WL3 and is
+downgraded accordingly.<a href="#section-4.1.1-5" class="pilcrow">¶</a></p>
+<p id="section-4.1.1-6">Core treats <code>capabilities_ref</code> as an opaque reference. A verifier resolves it
+through local configuration or a profile-defined mechanism to an accepted
+Conformance Class; Core does not define the serialization, discovery, revocation,
+or trust-anchor model for such capabilities. If <code>capabilities_ref</code> is absent,
+unavailable, expired, unverifiable, or not accepted by the verifier's trust
+configuration, resolution fails and the effective Conformance Class is CC0: the
+record MAY still be structurally valid, but its verified level is bounded by
+maxCapability(CC0) = WL0 (fail-closed). Core interoperability therefore covers structure, signature, and the ladder mechanics; the assignment of a verified level above WL0 is relative to the verifier's trust configuration, in the same way that RATS appraisal is relative to appraisal policy.<a href="#section-4.1.1-6" class="pilcrow">¶</a></p>
+<p id="section-4.1.1-7"><strong>Rationale for the maxCapability(CC) mapping.</strong> The mapping assigns to each Conformance Class the highest Witnessability Level whose claims that class can actually ground; it tracks verifier capability, not witness output. At CC0 and CC1 no signature is verified, so no runtime claim above observation (WL0) can be grounded. At CC2 a record's signature is verified against a published key: intent (WL1) and invocation (WL2) claims become groundable, since both are carried in the signed content and differ only in their conditional-required fields (<a href="#fields-conditional" class="auto internal xref">Section 6.1</a>); execution claims are not, because CC2 does not ground the boundary assertion itself. CC3 adds that grounding -- key identity bound to the declared boundary through attestation or an established trust anchor -- which <a href="#honesty-evidence" class="auto internal xref">Section 7.4</a> sets as the minimum for execution ownership, so maxCapability rises to WL3. CC4 adds verified composition (<a href="#verifier-result" class="auto internal xref">Section 8.1</a>), the property that makes a provenance bridge trustworthy across chained records, raising the bound to WL4. CC5 adds verification of an independent-verification path, the implementation-side counterpart of WL5. The scale is monotonic non-decreasing by construction, and the combined invariant of <a href="#honesty-boundary" class="auto internal xref">Section 7.1</a> -- which bounds the verified level by both the claim-relative attainable level of the boundary and maxCapability(CC) -- ensures that neither a high-ceiling boundary nor a high-capability implementation alone can raise a record's verified level.<a href="#section-4.1.1-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="recordmodel">
+<section id="section-5">
+      <h2 id="name-record-model">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-record-model" class="section-name selfRef">Record Model</a>
+      </h2>
+<p id="section-5-1">A WEXP artifact is composed of the following layers.<a href="#section-5-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5-2.1">
+          <p id="section-5-2.1.1"><strong>WEXP Core Record.</strong> MUST be present; otherwise the artifact is not a WEXP Record.<a href="#section-5-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.2">
+          <p id="section-5-2.2.1"><strong>WEXP Profile Binding.</strong> MUST be present inside a specific profile; OPTIONAL in pure-Core records.<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.3">
+          <p id="section-5-2.3.1"><strong>WEXP Top-level Evidence.</strong> Typed blocks: provenance (for WL4), independent-verification / attestation (for WL5), and transparency (orthogonal). Each is carried as a typed <code>evidence-ref</code> (<a href="#schema" class="auto internal xref">Section 6.2</a>); Core checks only its presence and syntactic binding to the record, not its internal semantics. Such evidence is REQUIRED at its claimed WL, and a verifier MUST honor evidence only when carried at the top level. This evidence MUST NOT be carried inside extensions.<a href="#section-5-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.4">
+          <p id="section-5-2.4.1"><strong>WEXP Extensions.</strong> An OPTIONAL map of the form <code>{ "&lt;registered-name&gt;": { "critical": &lt;bool&gt;, "value": &lt;...&gt; } }</code>. Extensions MAY strengthen explainability. Extensions MUST NOT raise the WL, and MUST NOT carry WL4 or WL5 evidence.<a href="#section-5-2.4.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-5-3">Profiles MUST NOT redefine Core fields; profiles MAY constrain, extend, or specialize them. A Core record MUST validate standalone, without a profile.<a href="#section-5-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="fields">
+<section id="section-6">
+      <h2 id="name-core-record-fields">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-core-record-fields" class="section-name selfRef">Core Record Fields</a>
+      </h2>
+<p id="section-6-1">A WEXP Core Record answers seven questions. The following fields MUST be present in every Core Record.<a href="#section-6-1" class="pilcrow">¶</a></p>
+<table class="center" id="table-4">
+        <caption><a href="#table-4" class="selfRef">Table 4</a></caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Question</th>
+            <th class="text-left" rowspan="1" colspan="1">Field(s)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">What happened?</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>event.operation</code>, <code>event.event_type</code>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">Who or what acted?</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>subject{ agent_id, host_id }</code>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">Where was the witness boundary?</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>model.boundary_type</code>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">What level is claimed?</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>model.claimed_level</code> (a WL)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">Who witnessed, and signed with what?</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>witness{}</code>, <code>seal{}</code>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">What is disclosed?</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>disclosure{}</code>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">Identity of protocol and record</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>protocol</code>, <code>protocol_version</code>, <code>record_id</code>, <code>created_at</code>
+</td>
+          </tr>
+        </tbody>
+      </table>
+<p id="section-6-3">The <code>record_id</code> is an opaque identifier: uniqueness is the issuing implementation's responsibility, and Core defines no format, namespace, or collision semantics beyond exact-match comparison.<a href="#section-6-3" class="pilcrow">¶</a></p>
+<div id="fields-conditional">
+<section id="section-6.1">
+        <h3 id="name-conditional-required-fields">
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-conditional-required-fields" class="section-name selfRef">Conditional-required fields by claimed level</a>
+        </h3>
+<p id="section-6.1-1">The following fields are conditionally required by <code>model.claimed_level</code>. These requirements are enforced by the verifier when evaluating the claimed level; their absence does not by itself make a Core Record structurally invalid and MUST instead result in a downgrade to the highest level, not exceeding the claim, whose own requirements are met (see <a href="#verifier-result" class="auto internal xref">Section 8.1</a> and <a href="#verifier-downgrade" class="auto internal xref">Section 8.2.1</a>). The schema validates structure; the verifier validates the claimed level.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-6.1-2.1">
+            <p id="section-6.1-2.1.1"><strong>WL1</strong> -- <code>input.arguments_hash</code> MUST be present.<a href="#section-6.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.1-2.2">
+            <p id="section-6.1-2.2.1"><strong>WL2</strong> -- <code>input.arguments_hash</code> MUST be present, and only that (invocation-evidence). At WL2, <code>policy</code> and timing are OPTIONAL and are not Core-required: policy is orthogonal to WL and is profile-scoped. A profile MAY require policy for gate-mediated actions.<a href="#section-6.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.1-2.3">
+            <p id="section-6.1-2.3.1"><strong>WL3</strong> -- <code>execution.{ started_at, ended_at, outcome, result_hash }</code> MUST be present.<a href="#section-6.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.1-2.4">
+            <p id="section-6.1-2.4.1"><strong>WL4</strong> -- a provenance artifact (see <a href="#recordmodel" class="auto internal xref">Section 5</a>, Top-level Evidence) MUST be present, in addition to the WL3 requirements.<a href="#section-6.1-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.1-2.5">
+            <p id="section-6.1-2.5.1"><strong>WL5</strong> -- an independent-verification path MUST be present, in addition to the WL3 requirements.<a href="#section-6.1-2.5.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-6.1-3">Raw payloads MUST NOT be required by Core; see the Minimal Evidence floor (<a href="#honesty" class="auto internal xref">Section 7</a>).<a href="#section-6.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="schema">
+<section id="section-6.2">
+        <h3 id="name-core-record-schema-cddl">
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-core-record-schema-cddl" class="section-name selfRef">Core Record schema (CDDL)</a>
+        </h3>
+<p id="section-6.2-1">The following CDDL (<span>[<a href="#RFC8610" class="cite xref">RFC8610</a>]</span>) is the normative schema for a WEXP Core
+Record. A complete worked JSON example, with accept and downgrade verification walkthroughs, will be provided in a subsequent revision. A Core Record MUST validate against this schema;
+conditional-required fields by claimed level (<a href="#fields-conditional" class="auto internal xref">Section 6.1</a>) and
+the honesty invariants (<a href="#honesty" class="auto internal xref">Section 7</a>) are additional constraints the
+verifier enforces beyond structural validation.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<div class="breakable lang-cddl sourcecode" id="section-6.2-2">
+<pre>
+wexp-core-record = {
+  protocol: tstr,
+  protocol_version: tstr,
+  record_id: tstr,
+  created_at: tdate,
+  event: event-block,
+  subject: subject-block,
+  model: model-block,
+  witness: witness-block,
+  seal: seal-block,
+  disclosure: disclosure-block,
+  ? capabilities_ref: tstr, ; reference to published CC capabilities
+  ? input: input-block,     ; required at WL1 and WL2
+  ? execution: execution-block, ; required at WL3
+  ? evidence: evidence-block,   ; top-level evidence only
+  ? extensions: extensions-map,
+}
+
+; claimed_level encoding (ratified): string form
+WL = "WL0" / "WL1" / "WL2" / "WL3" / "WL4" / "WL5"
+; Comparison semantics (informative): "WLn" maps to integer n for the
+; honesty invariants. The verified level is bounded by
+;   min( claimed, attainable(boundary_type, claimed, evidence),
+;        maxCapability(CC), recorder_ceiling, chain_min )
+; Implementations MUST parse "WLn" as integer n for ordering
+; comparisons, then re-encode as string in records.
+
+; Hash-alg identifier; "sha-256" is the default. Each hash field
+; carries its own algorithm so the record is self-describing.
+hash-alg = "sha-256" / tstr
+
+; All octet strings in JSON serialization (seal.sig, *_hash, digest)
+; are encoded as base64url WITHOUT padding.
+
+event-block = { operation: tstr, event_type: tstr }
+subject-block = { agent_id: tstr, host_id: tstr }
+model-block = { boundary_type: tstr, claimed_level: WL }
+
+; witness / seal / disclosure internal fields are refined by
+; profiles; beyond the mandatory identifiers below they are open
+; maps pending field-byte alignment.
+; id identifies the witnessing component or system (opaque).
+witness-block = { id: tstr, * tstr =&gt; any }
+; alg, sig, and kid are present iff the record is signed (CC2+);
+; sig is base64url-encoded, no padding; kid is an opaque
+; identifier of the signing key (resolution is out of scope).
+seal-block = { ? alg: tstr, ? sig: tstr, ? kid: tstr, * tstr =&gt; any }
+disclosure-block = { * tstr =&gt; any }
+
+input-block = {
+  arguments_hash_alg: hash-alg,
+  arguments_hash: tstr,          ; base64url, no padding
+  * tstr =&gt; any
+}
+execution-block = {
+  started_at: tdate, ended_at: tdate,
+  outcome: tstr,
+  result_hash_alg: hash-alg,
+  result_hash: tstr              ; base64url, no padding
+}
+
+; Top-level typed evidence refs. Core verifies their PRESENCE and
+; SYNTACTIC binding (digest + optional bound_record_id);
+; it does not validate internal semantics of the referenced artifact.
+evidence-ref = {
+  type: tstr,
+  digest_alg: hash-alg,
+  digest: tstr,                  ; base64url, no padding
+  ? uri: tstr,
+  ? bound_record_id: tstr,
+  * tstr =&gt; any
+}
+evidence-block = {
+  ; provenance is required for WL4; at WL5 it is optional
+  ; unless a profile or policy requires it
+  ? provenance: evidence-ref,
+  ? independent_verification: evidence-ref, ; required for WL5
+  ? transparency: evidence-ref,             ; orthogonal
+}
+
+extensions-map = { * tstr =&gt; { critical: bool, value: any } }
+</pre><a href="#section-6.2-2" class="pilcrow">¶</a>
+</div>
+<p id="section-6.2-3">Extensions MUST NOT raise the Witnessability Level and MUST NOT carry WL4
+or WL5 evidence (<a href="#recordmodel" class="auto internal xref">Section 5</a>).<a href="#section-6.2-3" class="pilcrow">¶</a></p>
+<p id="section-6.2-4">A top-level evidence artifact is <em>bound</em> to a WEXP record when the record carries an <code>evidence-ref</code> whose <code>digest</code> identifies that artifact and that reference is included in the signed record payload; <code>bound_record_id</code>, when present, is a reverse reference from the artifact to the WEXP record. Core validates the presence and syntax of this binding; validation of the artifact's internal semantics is profile-specific.<a href="#section-6.2-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="honesty">
+<section id="section-7">
+      <h2 id="name-honesty-invariants-ceilings">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-honesty-invariants-ceilings" class="section-name selfRef">Honesty Invariants (Ceilings)</a>
+      </h2>
+<p id="section-7-1">Two ceilings and a floor bound what a record may honestly claim. A verifier MUST enforce the Boundary Ceiling and, when a qualification is asserted, the Recorder Ceiling; the Minimal Evidence floor is a content discipline on the producer.<a href="#section-7-1" class="pilcrow">¶</a></p>
+<div id="honesty-boundary">
+<section id="section-7.1">
+        <h3 id="name-boundary-ceiling-must">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-boundary-ceiling-must" class="section-name selfRef">Boundary Ceiling (MUST)</a>
+        </h3>
+<p id="section-7.1-1">The Boundary Ceiling separates two mechanisms: the execution-evidence level a boundary directly grounds, and the lift that bound top-level evidence adds on top of it.<a href="#section-7.1-1" class="pilcrow">¶</a></p>
+<p id="section-7.1-2"><strong>Base execution level.</strong> Each boundary type grounds a base execution-evidence level, <code>base_execution_level(boundary_type)</code>, taken from the WEXP Boundary Types registry (<a href="#iana-boundary-types" class="auto internal xref">Section 11.1</a>): an intent or approval boundary grounds WL1, an invocation boundary WL2, and an execution-ownership boundary (including a trusted execution environment) WL3. No boundary grounds WL4 or WL5 by itself.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
+<p id="section-7.1-3"><strong>Evidence lift.</strong> WL4 and WL5 are reached only by adding a bound top-level evidence artifact to an execution-ownership boundary, and each lift level is satisfied only by the artifact that defines it: a bound provenance artifact satisfies WL4; a bound independent-verification artifact satisfies WL5; neither satisfies the other's level. Attainability is claim-relative across the whole ladder -- the highest level, not exceeding the claimed level, whose own requirements are met. For WL1-WL3 the requirements are the boundary base and the conditional-required fields of <a href="#fields-conditional" class="auto internal xref">Section 6.1</a>; for WL4 and WL5 they are an execution-ownership base, the WL3 execution evidence (the level table defines WL4 and WL5 as "WL3 plus" an artifact), and the corresponding bound artifact. Here <code>evidence</code> denotes both the record's conditional-required fields and its bound top-level artifacts:<a href="#section-7.1-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-7.1-4">
+<pre>
+attainable(boundary_type, claimed_level, evidence):
+  base = base_execution_level(boundary_type)
+  best = WL0
+  for n in WL1..WL3:
+    if n &lt;= base and n &lt;= claimed_level and
+       the conditional-required fields for n are present:
+        best = n
+  if base &gt;= WL3 and claimed_level &gt;= WL4 and
+     the WL3 requirements are met and
+     a bound provenance artifact is present:
+      best = WL4
+  if base &gt;= WL3 and claimed_level &gt;= WL5 and
+     the WL3 requirements are met and
+     a bound independent-verification artifact is present:
+      best = WL5
+  return best
+</pre><a href="#section-7.1-4" class="pilcrow">¶</a>
+</div>
+<p id="section-7.1-5">An intent or invocation boundary (base &lt; WL3) cannot reach WL4 or WL5: a provenance or independent-verification artifact attached to a <code>manual-approval</code> or <code>proxy</code> record does not raise it. WL4 and WL5 are available at <code>host-hook</code>, <code>kernel</code>, <code>tool-runtime</code>, and <code>tee</code> boundaries, each requiring the corresponding bound artifact.<a href="#section-7.1-5" class="pilcrow">¶</a></p>
+<p id="section-7.1-6"><strong>Combined invariant.</strong> The verified level MUST NOT exceed any of the claimed level, the boundary-and-evidence attainable level, the implementation Conformance Class capability (<a href="#cc-maxcap" class="auto internal xref">Section 4.1.1</a>), the recorder ceiling (<a href="#honesty-recorder" class="auto internal xref">Section 7.2</a>), and the composition minimum (<a href="#verifier-composition" class="auto internal xref">Section 8.2</a>):<a href="#section-7.1-6" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-7.1-7">
+<pre>
+verified_level &lt;= min(
+    claimed_level,
+    attainable(boundary_type, claimed_level, evidence),
+    maxCapability(CC),
+    recorder_ceiling,
+    chain_min )
+</pre><a href="#section-7.1-7" class="pilcrow">¶</a>
+</div>
+<p id="section-7.1-8">The verifier MUST derive <code>base_execution_level</code> from the boundary-types registry based on the actual <code>boundary_type</code>, and MUST NOT derive it from the implementation's Conformance Class. A high-capability boundary does not raise a record above the implementation's Conformance Class: an implementation at CC3 (maxCapability WL3) emitting a record at a <code>tee</code> boundary with a bound provenance artifact is still bounded at WL3, since min(WL4, WL3) = WL3.<a href="#section-7.1-8" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="honesty-recorder">
+<section id="section-7.2">
+        <h3 id="name-recorder-ceiling-must-when-">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-recorder-ceiling-must-when-" class="section-name selfRef">Recorder Ceiling (MUST when asserted)</a>
+        </h3>
+<p id="section-7.2-1">Core reserves a recorder-ceiling slot in the verified-level bound (<a href="#verifier" class="auto internal xref">Section 8</a>) but defines no recorder qualifications: the qualification vocabulary, its record fields, and the max_assurance() mapping are profile-defined. When no profile-defined qualification is asserted, the slot is inactive and does not constrain the record. When a profile asserts one, the claimed level MUST NOT exceed that profile's maximum assurance:<a href="#section-7.2-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-7.2-2">
+<pre>
+claimed_WL &lt;= max_assurance(qualification_profile)
+</pre><a href="#section-7.2-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="honesty-minimal">
+<section id="section-7.3">
+        <h3 id="name-minimal-evidence-floor-shou">
+<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-minimal-evidence-floor-shou" class="section-name selfRef">Minimal Evidence floor (SHOULD)</a>
+        </h3>
+<p id="section-7.3-1">Record content SHOULD be minimal-sufficient for the claimed WL. Raw payloads are excluded by default (Core never requires them); hashes, commitments, references, summaries, or encrypted material SHOULD be preferred. Minimality is relative to the claimed WL: verification metadata grows with WL, while the payload does not.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="honesty-evidence">
+<section id="section-7.4">
+        <h3 id="name-evidence-is-required-not-im">
+<a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-evidence-is-required-not-im" class="section-name selfRef">Evidence is required, not implied</a>
+        </h3>
+<p id="section-7.4-1">WL4 and WL5 require an actual bound evidence artifact, not merely a boundary label: a provenance artifact for WL4, and an independent-verification artifact for WL5. The <code>boundary_type</code> field is an assertion of the witness. At CC3 and above the assertion is bound to a verified key identity, which attributes it to a known signer but does not by itself prove the action was observed at the asserted boundary; stronger grounding of the boundary assertion (for example, boundary attestation evidence) is out of scope for Core and left to profiles and future work. Accordingly, a WEXP record does not prove that the declared boundary matches the actual execution environment.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+<div id="honesty-wl4">
+<section id="section-7.4.1">
+          <h4 id="name-wl4-attainability">
+<a href="#section-7.4.1" class="section-number selfRef">7.4.1. </a><a href="#name-wl4-attainability" class="section-name selfRef">WL4 attainability</a>
+          </h4>
+<p id="section-7.4.1-1">WL4 is attainable when both hold: (a) the boundary grounds an execution
+level of at least WL3 (<code>base_execution_level(boundary_type) &gt;= WL3</code>), and
+(b) a bound top-level provenance artifact is present (see <a href="#recordmodel" class="auto internal xref">Section 5</a>
+and <a href="#honesty-boundary" class="auto internal xref">Section 7.1</a>). WL4 is therefore reachable at any
+execution-ownership boundary -- <code>host-hook</code>, <code>kernel</code>, <code>tool-runtime</code>, or
+<code>tee</code> -- not only at <code>tee</code>: it is the bound provenance artifact, not a
+special boundary, that lifts WL3 execution evidence to WL4. WL5 is reached
+analogously, with a bound independent-verification artifact in place of the
+provenance artifact. An intent or invocation boundary
+(<code>base_execution_level &lt; WL3</code>) cannot reach WL4 or WL5 regardless of any
+attached artifact.<a href="#section-7.4.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="verifier">
+<section id="section-8">
+      <h2 id="name-verifier-requirements">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-verifier-requirements" class="section-name selfRef">Verifier Requirements</a>
+      </h2>
+<p id="section-8-1">A conforming verifier MUST evaluate a record through the following ladder; the overview below is informative, and the normative order of checks is the pseudocode of <a href="#verifier-result" class="auto internal xref">Section 8.1</a>. The procedure is modular: Core, then (if present) Profile, then (if present) Policy.<a href="#section-8-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8-2">
+<pre>
+structure (schema)
+-&gt; canonical signing input (JCS for JSON)
+-&gt; signature (per seal.alg; "Ed25519" MTI for JSON Core)
+-&gt; key binding
+-&gt; base execution level (boundary)
+-&gt; conditional-required + evidence lift (WL4/WL5 artifact)
+-&gt; Conformance Class capability
+-&gt; recorder ceiling
+-&gt; composition-min (chains)
+-&gt; [profile: action taxonomy, maker-checker, correction]
+-&gt; [policy: Evidence Contract gate -&gt; ALLOW | DENY | REQUIRE_REVIEW]
+</pre><a href="#section-8-2" class="pilcrow">¶</a>
+</div>
+<p id="section-8-3">Within this ladder, for the JSON serialization defined by this document, the signing input is the UTF-8 encoding of the JCS <span>[<a href="#RFC8785" class="cite xref">RFC8785</a>]</span> canonical form of the WEXP Core Record with <code>seal.sig</code> absent, so that <code>seal.alg</code> and, when present, <code>seal.kid</code> are part of the signed payload. The signature is computed and verified according to <code>seal.alg</code>, a string identifier that MUST name a fully specified signature algorithm -- one requiring no external parameters such as an unstated curve or hash. For this JSON serialization, the value "Ed25519" of <code>seal.alg</code> identifies Ed25519 as specified in <span>[<a href="#RFC8032" class="cite xref">RFC8032</a>]</span> and is mandatory to implement (<span>[<a href="#RFC7696" class="cite xref">RFC7696</a>]</span>); a verifier MAY implement additional profile-defined algorithms. Additional values of <code>seal.alg</code> MUST be introduced by a WEXP serialization or cryptographic profile that specifies the algorithm identifier namespace and the exact verification procedure; such profiles SHOULD reuse registered JOSE or COSE algorithm identifiers, including post-quantum signature algorithms, rather than minting WEXP-specific algorithm names. This document defines no algorithm registry of its own. Algorithms that are unsupported, unrecognized, or disallowed by the verifier's trust configuration fail closed (E_UNSUPPORTED_ALGORITHM). Canonicalization is a property of the serialization: JCS applies to this JSON serialization, and profiles defining other envelopes (for example, COSE) define their own canonical signing input. After signature computation, <code>seal.sig</code> is inserted as a base64url-encoded octet string without padding. All octet strings in the JSON serialization -- <code>seal.sig</code>, <code>input.arguments_hash</code>, <code>execution.result_hash</code>, and any evidence <code>digest</code> -- MUST be base64url-encoded without padding. If <code>seal.sig</code> is present and <code>seal.alg</code> is absent, unsupported, or unrecognized, the record is rejected (E_UNSUPPORTED_ALGORITHM); if <code>seal.sig</code> is absent, the record is not rejected on that basis and is evaluated at most as CC1 for that record (<a href="#verifier-result" class="auto internal xref">Section 8.1</a>). An unsupported or unrecognized hash algorithm likewise fails closed: if the algorithm of a conditional-required hash (<code>input.arguments_hash_alg</code>, <code>execution.result_hash_alg</code>) or of an evidence <code>digest_alg</code> is unsupported, the affected field or artifact is not honored and the verified level is computed as if it were absent (<a href="#verifier-downgrade" class="auto internal xref">Section 8.2.1</a>). The key-binding step resolves <code>seal.kid</code> to a verified key identity; the resolution mechanism (a local key store or profile-defined discovery) is out of scope for Core.<a href="#section-8-3" class="pilcrow">¶</a></p>
+<div id="verifier-result">
+<section id="section-8.1">
+        <h3 id="name-verifier-result-and-verdict">
+<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-verifier-result-and-verdict" class="section-name selfRef">Verifier result and verdict</a>
+        </h3>
+<p id="section-8.1-1">A verifier computes a <code>verified_level</code> and emits a <code>verdict</code>:<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-2">
+<pre>
+claimed_level  = model.claimed_level
+verified_level = level supported by structure, signature,
+               key binding, base execution level, present
+               bound evidence, Conformance Class capability,
+               recorder ceiling, and chain minimum
+verdict:
+  reject    if the record cannot be safely interpreted or trusted
+  accept    if verified_level == claimed_level
+  downgrade if verified_level &lt;  claimed_level and the record remains
+            safely interpretable
+</pre><a href="#section-8.1-2" class="pilcrow">¶</a>
+</div>
+<p id="section-8.1-3">The schema validates structure; the verifier validates the claimed level. A missing or unbound top-level evidence artifact required by the claimed level does not by itself cause rejection; it lowers <code>verified_level</code> and yields <code>downgrade</code> (<a href="#verifier-downgrade" class="auto internal xref">Section 8.2.1</a>). A verifier result SHOULD carry <code>verdict</code>, <code>claimed_level</code>, <code>verified_level</code>, <code>downgrade_reason</code> (zero or more error-code tokens), and <code>errors</code> (zero or more error-code tokens), with tokens drawn from <a href="#iana-error-codes" class="auto internal xref">Section 11.2</a>.<a href="#section-8.1-3" class="pilcrow">¶</a></p>
+<p id="section-8.1-4">The following pseudocode is normative for the order of checks and for the accept/downgrade/reject outcome; it does not mandate a code structure:<a href="#section-8.1-4" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.1-5">
+<pre>
+if structure invalid:             reject(E_INVALID_SCHEMA)
+if unknown critical extension:  reject(E_UNKNOWN_CRITICAL_EXTENSION)
+if canonicalization fails:        reject(E_CANONICALIZATION_FAILED)
+if timestamp invalid:             reject(E_TIMESTAMP_INVALID)
+if boundary_type unregistered:    reject(E_UNKNOWN_BOUNDARY_TYPE)
+
+; signature: absence is not an error (it caps the effective CC
+; for this record); a present-but-invalid signature is rejected.
+if seal.sig present:
+    if seal.alg absent/unsupported: reject(E_UNSUPPORTED_ALGORITHM)
+    if signature invalid:              reject(E_INVALID_SIGNATURE)
+    if key binding fails:              reject(E_KEY_BINDING_FAILED)
+    signed = true
+else:
+    signed = false
+
+cc = resolve(capabilities_ref)        ; implementation-scoped CC
+if cc unresolved or not accepted: cc = CC0  ; E_MISSING_CAPABILITIES
+; a record without a valid signature is evaluated at most as
+; CC1 (this record only)
+effective_cc = cc if signed else min(cc, CC1)
+
+base = min( claimed_level,
+            attainable(boundary_type, claimed_level, evidence),
+            maxCapability(effective_cc) )
+if recorder qualification asserted:
+    base = min( base, max_assurance(qualification_profile) )
+verified_level = base
+if a chain is supplied:
+    verified_level = min( verified_level,
+                       min over segments( segment.verified_level ) )
+
+if verified_level == claimed_level: accept
+else:                               downgrade
+</pre><a href="#section-8.1-5" class="pilcrow">¶</a>
+</div>
+<p id="section-8.1-6">Here <code>attainable(boundary_type, claimed_level, evidence)</code> is the claim-relative bound of <a href="#honesty-boundary" class="auto internal xref">Section 7.1</a>: the highest level, not exceeding the claimed level, whose own evidence requirements are met -- WL4 only by a bound provenance artifact, WL5 only by a bound independent-verification artifact.<a href="#section-8.1-6" class="pilcrow">¶</a></p>
+<p id="section-8.1-7">A timestamp is invalid when <code>created_at</code>, or any <code>execution</code> timestamp present, is not a syntactically valid <code>tdate</code> per the schema (<a href="#schema" class="auto internal xref">Section 6.2</a>), or when <code>execution.ended_at</code> precedes <code>execution.started_at</code>. Freshness, skew tolerance, and validity windows are policy concerns, not Core: Core takes no position on how old a record may be.<a href="#section-8.1-7" class="pilcrow">¶</a></p>
+<p id="section-8.1-8">A record without a valid <code>seal.sig</code> is not rejected on that basis alone; for that record the effective Conformance Class is at most CC1 (maxCapability WL0), since a valid signature is a property of CC2 and above (<a href="#cc-scale" class="auto internal xref">Section 4.1</a>). This is deliberate: an unsigned record can be structurally valid, but nothing binds its content to a producer, so it grounds no execution-evidence claim. A <code>seal.sig</code> that is present but cryptographically invalid, or present with an absent or unsupported <code>seal.alg</code>, or present without <code>seal.kid</code>, is rejected.<a href="#section-8.1-8" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="verifier-composition">
+<section id="section-8.2">
+        <h3 id="name-composition">
+<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-composition" class="section-name selfRef">Composition</a>
+        </h3>
+<p id="section-8.2-1">For a chain of segments, the verified level is the minimum over segments:<a href="#section-8.2-1" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.2-2">
+<pre>
+Level(chain) = min over segments( verified_level )
+</pre><a href="#section-8.2-2" class="pilcrow">¶</a>
+</div>
+<p id="section-8.2-3">Aggregation MUST NOT inflate the level: a chain MUST NOT be assigned a level higher than the lowest level any of its segments supports.<a href="#section-8.2-3" class="pilcrow">¶</a></p>
+<div id="verifier-downgrade">
+<section id="section-8.2.1">
+          <h4 id="name-downgrade-target-for-missin">
+<a href="#section-8.2.1" class="section-number selfRef">8.2.1. </a><a href="#name-downgrade-target-for-missin" class="section-name selfRef">Downgrade target for missing required evidence</a>
+          </h4>
+<p id="section-8.2.1-1">At the conditional-required + evidence-lift step (<a href="#verifier" class="auto internal xref">Section 8</a>), if any
+evidence required by the claimed level -- a conditional-required field
+(<a href="#fields-conditional" class="auto internal xref">Section 6.1</a>) or a bound top-level artifact -- is absent, the
+verifier MUST NOT reject solely on that basis; it MUST instead downgrade
+the verified level to the highest level, not exceeding the claimed level,
+whose own evidence requirements are met (the claim-relative attainable level
+of <a href="#honesty-boundary" class="auto internal xref">Section 7.1</a>):<a href="#section-8.2.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-8.2.1-2.1">
+              <p id="section-8.2.1-2.1.1">claimed WL5, a provenance artifact present but no
+independent-verification path -&gt; WL4;<a href="#section-8.2.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-8.2.1-2.2">
+              <p id="section-8.2.1-2.2.1">claimed WL4 or WL5 with neither artifact -&gt; the level grounded by
+the boundary alone;<a href="#section-8.2.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="section-8.2.1-2.3">
+              <p id="section-8.2.1-2.3.1">claimed WL4 with an independent-verification path but no provenance
+artifact -&gt; the level grounded by the boundary alone: an
+independent-verification artifact satisfies WL5, not WL4, and a level
+above the claim is never assigned.<a href="#section-8.2.1-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+<p id="section-8.2.1-3">The same rule applies below the lift levels: a claimed WL1-WL3 whose conditional-required fields (<a href="#fields-conditional" class="auto internal xref">Section 6.1</a>) are absent is downgraded to the highest level, not exceeding the claim, whose requirements are met; a field or artifact whose hash algorithm is unsupported is treated as absent for this purpose (<a href="#verifier" class="auto internal xref">Section 8</a>). For example, a record claiming WL3 at an execution-ownership boundary with no <code>execution</code> block is downgraded to WL2 when <code>input.arguments_hash</code> is present, and to WL0 when it is not.<a href="#section-8.2.1-3" class="pilcrow">¶</a></p>
+<p id="section-8.2.1-4">When neither artifact is present, the floor is at most the boundary's base
+execution level (<a href="#honesty-boundary" class="auto internal xref">Section 7.1</a>), provided the corresponding
+conditional-required fields (<a href="#fields-conditional" class="auto internal xref">Section 6.1</a>) are present: WL1 for an intent or approval boundary, WL2 for an
+invocation boundary, and WL3 for an execution-ownership boundary (<code>host-hook</code>,
+<code>kernel</code>, <code>tool-runtime</code>, <code>tee</code>). For example, a <code>tee</code> record claiming WL5, whose
+independent-verification artifact is absent or unbound and which carries
+no provenance artifact, is downgraded to WL3: the
+attestation grounds execution ownership (WL3) but, absent a bound
+independent-verification artifact, does not support WL5. A level downgraded in
+this way propagates through composition under the non-inflation rule
+(<a href="#verifier-composition" class="auto internal xref">Section 8.2</a>): a chain is never assigned a level higher than the
+lowest its segments support.<a href="#section-8.2.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="verifier-failure">
+<section id="section-8.3">
+        <h3 id="name-safe-failure">
+<a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-safe-failure" class="section-name selfRef">Safe failure</a>
+        </h3>
+<p id="section-8.3-1">Unknown fields or extensions marked <code>critical: true</code> MUST fail closed, with error <code>E_UNKNOWN_CRITICAL_EXTENSION</code>. Unknown non-critical extensions MAY be ignored. A verifier MUST NOT accept unknown critical content partially, heuristically, or as non-critical content.<a href="#section-8.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="implstatus">
+<section id="section-9">
+      <h2 id="name-implementation-status">
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-implementation-status" class="section-name selfRef">Implementation Status</a>
+      </h2>
+<p id="section-9-1">This section records the implementation status of WEXP, in the spirit of <span>[<a href="#RFC7942" class="cite xref">RFC7942</a>]</span>. It is informational and is to be removed before publication as an RFC.<a href="#section-9-1" class="pilcrow">¶</a></p>
+<p id="section-9-2">The reference implementation of WEXP is being developed by WitSeal: a witnessed-execution runtime implemented in TypeScript. The runtime today produces signed, hash-chained execution receipts in its v0.2 lineage format (policy-decision capture, approval state, artifact and result digests); these receipts are a compatibility lineage, not WEXP Core Records. A WEXP-conformant Core Record emitter and an offline verifier implementing the ladder of <a href="#verifier" class="auto internal xref">Section 8</a> are the next implementation milestone, tracked against this document.<a href="#section-9-2" class="pilcrow">¶</a></p>
+<p id="section-9-3">A prospective design-partner deployment is evaluating WEXP across the WL0-WL3 boundaries. Implementation status is informational and does not affect the specification's standing.<a href="#section-9-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="security">
+<section id="section-10">
+      <h2 id="name-security-considerations">
+<a href="#section-10" class="section-number selfRef">10. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-10-1">WEXP grades the <em>strength</em> of evidence about execution. It does not certify the correctness, safety, or alignment of the action. Implementers and relying parties MUST NOT treat a WEXP record as more than an execution-evidence claim at its stated level. In particular:<a href="#section-10-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-10-2.1">
+          <p id="section-10-2.1.1"><strong>Provenance is not runtime.</strong> A provenance artifact establishes origin/build, not that a specific runtime action occurred. Conflating the two is the error <code>E_PROVENANCE_RUNTIME_CONFUSION</code>; this code belongs to the policy layer -- it names a relying-party interpretation error, is not emitted by the Core verifier ladder, and its registered default handling is <code>policy</code>.<a href="#section-10-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-10-2.2">
+          <p id="section-10-2.2.1"><strong>Attestation is not semantic correctness.</strong> Remote attestation can establish environment identity/integrity, not that the executed action was correct.<a href="#section-10-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-10-2.3">
+          <p id="section-10-2.3.1"><strong>A hash is not payload truth.</strong> A hash-only payload proves integrity of a referenced object, not the truth of its contents.<a href="#section-10-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-10-2.4">
+          <p id="section-10-2.4.1"><strong>Boundary assertion.</strong> As stated in <a href="#honesty-evidence" class="auto internal xref">Section 7.4</a>, a record does not prove that the declared boundary matches the actual execution environment; this is grounded externally (CC3+/attestation), not by the record.<a href="#section-10-2.4.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-10-3">These non-claims are normative limits on interpretation, not optional caveats.<a href="#section-10-3" class="pilcrow">¶</a></p>
+<p id="section-10-4">Consistent with <span>[<a href="#AUDIT-ARCH" class="cite xref">AUDIT-ARCH</a>]</span>, WEXP does not address an adversarial executor that refuses to produce a record at its boundary, operator collusion across all roles, or model alignment. Under WEXP these do not yield a positive claim: missing or unobtainable evidence produces a downgraded or rejected verdict, never an inflated one. A transparency-log receipt establishes existence and content at registration, not the truth of the underlying claim; a self-asserted record does not establish that user intent was satisfied; a complete trace does not establish that authorization was valid. In particular, a transparency receipt alone does not constitute the independent-verification artifact required for WL5: a transparency log MAY carry or timestamp such an artifact, but WL5 requires an independent verification of the execution-evidence claim itself (<a href="#honesty-boundary" class="auto internal xref">Section 7.1</a>). WEXP forbids these inferences (non-inflation).<a href="#section-10-4" class="pilcrow">¶</a></p>
+<p id="section-10-5">Independent custody of a record (for example, third-party countersigning or transparency-log registration) and independent observation of an executed effect (for example, attestation by a receiving counterparty) strengthen evidence in different ways: the former makes the record's custody independent while its content remains as originated; the latter corroborates the observed effect itself. Both are graded, like all other evidence, under the honesty invariants above and never inflate a claim.<a href="#section-10-5" class="pilcrow">¶</a></p>
+<p id="section-10-6">A note on privacy and selective disclosure. WEXP references execution content by hash: <code>input.arguments_hash</code> and result commitments pin claims to specific payloads without storing them (the Minimal Evidence floor). Verification of integrity and claim strength therefore proceeds on hashes and record structure alone, and deployments may keep content fields opaque across administrative or domain boundaries. Profiles may add selective-disclosure mechanisms; Core neither requires nor precludes them. Hashes and digests are integrity commitments, not confidentiality mechanisms; low-entropy or guessable payloads may be vulnerable to dictionary or correlation attacks. Privacy-sensitive profiles SHOULD use salted commitments, keyed commitments, encryption, or selective disclosure.<a href="#section-10-6" class="pilcrow">¶</a></p>
+<p id="section-10-7">A note on algorithm migration and long-lived evidence. The signature algorithm lies on the authenticity axis (Conformance Class), not the witnessability axis: a stronger algorithm does not raise WL, and non-inflation holds. The relevant quantum-era threat to signed records is not retrospective decryption but future forgery: records signed with a classical algorithm remain verifiable, but once that algorithm is broken an adversary can forge new records, including backdated ones. Durable evidentiary force therefore comes from contemporaneous anchoring -- a transparency registration or an independent countersignature fixed while the algorithm is unbroken (see the custody discussion above) -- and from algorithm migration via <code>seal.alg</code> and profiles, not from any single algorithm choice made today.<a href="#section-10-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana">
+<section id="section-11">
+      <h2 id="name-iana-considerations">
+<a href="#section-11" class="section-number selfRef">11. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-11-1">This document defines registries for WEXP boundary types, error codes, and WEXP profiles. This revision specifies the WEXP Boundary Types registry and seeds the WEXP Error Codes registry; the WEXP Profiles registry is reserved here and specified in a subsequent revision. This document does not request a Conformance Classes registry: the classes CC0-CC5 are defined by this document (<a href="#cc-scale" class="auto internal xref">Section 4.1</a>). All registries in this section use the Specification Required <span>[<a href="#RFC8126" class="cite xref">RFC8126</a>]</span> registration policy.<a href="#section-11-1" class="pilcrow">¶</a></p>
+<div id="iana-boundary-types">
+<section id="section-11.1">
+        <h3 id="name-wexp-boundary-types">
+<a href="#section-11.1" class="section-number selfRef">11.1. </a><a href="#name-wexp-boundary-types" class="section-name selfRef">WEXP Boundary Types</a>
+        </h3>
+<p id="section-11.1-1">IANA is requested to create the WEXP Boundary Types registry. Each entry has a Boundary Type identifier, an Execution Level (the base execution-evidence level the boundary grounds, used as <code>base_execution_level(boundary_type)</code> in the Boundary Ceiling invariant of <a href="#honesty-boundary" class="auto internal xref">Section 7.1</a>), and a description of the control surface the boundary observes. The Execution Level is a base level, not a grant of the maximum claim: WL4 and WL5 are reached only by adding a bound top-level provenance or independent-verification artifact (<a href="#honesty-boundary" class="auto internal xref">Section 7.1</a>, <a href="#honesty-wl4" class="auto internal xref">Section 7.4.1</a>). The registry is initialized with the following values:<a href="#section-11.1-1" class="pilcrow">¶</a></p>
+<table class="center" id="table-5">
+          <caption><a href="#table-5" class="selfRef">Table 5</a></caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Boundary Type</th>
+              <th class="text-left" rowspan="1" colspan="1">Execution Level</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">manual-approval</td>
+              <td class="text-left" rowspan="1" colspan="1">WL1</td>
+              <td class="text-left" rowspan="1" colspan="1">Recorded human approval, captured out of band; witnesses intent or authorization, not invocation or execution.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">proxy</td>
+              <td class="text-left" rowspan="1" colspan="1">WL2</td>
+              <td class="text-left" rowspan="1" colspan="1">Interposed invocation mediator (e.g. API or tool proxy); witnesses that a call crossed the boundary, not execution outcome.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">workflow</td>
+              <td class="text-left" rowspan="1" colspan="1">WL2</td>
+              <td class="text-left" rowspan="1" colspan="1">Workflow or orchestration engine recording step transitions; witnesses invocation and ordering, not in-process execution. Activity-owned execution should use host-hook or tool-runtime as appropriate.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">host-hook</td>
+              <td class="text-left" rowspan="1" colspan="1">WL3</td>
+              <td class="text-left" rowspan="1" colspan="1">In-host instrumentation (runtime, ABI, or syscall hook); witnesses execution start, outcome, and result commitment. A bound provenance artifact lifts to WL4; a bound independent-verification artifact lifts to WL5.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">kernel</td>
+              <td class="text-left" rowspan="1" colspan="1">WL3</td>
+              <td class="text-left" rowspan="1" colspan="1">Kernel-level mediation at the OS boundary; witnesses execution. A bound provenance artifact lifts to WL4; a bound independent-verification artifact lifts to WL5.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">tool-runtime</td>
+              <td class="text-left" rowspan="1" colspan="1">WL3</td>
+              <td class="text-left" rowspan="1" colspan="1">Tool or agent runtime performing the action in process; records execution directly. A bound provenance artifact lifts to WL4; a bound independent-verification artifact lifts to WL5.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">tee</td>
+              <td class="text-left" rowspan="1" colspan="1">WL3</td>
+              <td class="text-left" rowspan="1" colspan="1">Trusted execution environment owning execution; grounds WL3. Its attestation MAY contribute to a bound independent-verification artifact lifting to WL5 (and a bound provenance artifact lifts to WL4) when profile-defined, independently appraised, present, and bound.</td>
+            </tr>
+          </tbody>
+        </table>
+<p id="section-11.1-3">The Execution Level is the base level a boundary grounds, not a grant of the maximum claim. By <a href="#fields-conditional" class="auto internal xref">Section 6.1</a> and <a href="#honesty-evidence" class="auto internal xref">Section 7.4</a>, a WL4 claim still requires a bound provenance artifact and a WL5 claim a bound independent-verification artifact, each carried as top-level evidence. WL4 and WL5 are therefore reachable at any execution-ownership boundary (<code>host-hook</code>, <code>kernel</code>, <code>tool-runtime</code>, <code>tee</code>) when the corresponding artifact is present and bound; a <code>tee</code> attestation is one source of the WL5 independent-verification artifact, not a privileged path. Where the required artifact is absent or not bound to the record, a verifier downgrades or rejects the record (<a href="#verifier" class="auto internal xref">Section 8</a>, <a href="#honesty-evidence" class="auto internal xref">Section 7.4</a>) rather than honoring a nominal level. A boundary label by itself never raises the claimable level above the base execution level.<a href="#section-11.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana-error-codes">
+<section id="section-11.2">
+        <h3 id="name-wexp-error-codes">
+<a href="#section-11.2" class="section-number selfRef">11.2. </a><a href="#name-wexp-error-codes" class="section-name selfRef">WEXP Error Codes</a>
+        </h3>
+<p id="section-11.2-1">IANA is requested to create the WEXP Error Codes registry, with the Specification Required <span>[<a href="#RFC8126" class="cite xref">RFC8126</a>]</span> policy. Each entry has an error-code token, a default handling disposition (reject, downgrade, or policy), and a reference to its defining specification. The default handling indicates how a conforming verifier treats the condition absent an overriding profile or policy (<a href="#verifier-result" class="auto internal xref">Section 8.1</a>). This revision registers the error codes used normatively in this document:<a href="#section-11.2-1" class="pilcrow">¶</a></p>
+<table class="center" id="table-6">
+          <caption><a href="#table-6" class="selfRef">Table 6</a></caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Error Code</th>
+              <th class="text-left" rowspan="1" colspan="1">Default handling</th>
+              <th class="text-left" rowspan="1" colspan="1">Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_INVALID_SCHEMA</td>
+              <td class="text-left" rowspan="1" colspan="1">reject</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#verifier-result" class="auto internal xref">Section 8.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_CANONICALIZATION_FAILED</td>
+              <td class="text-left" rowspan="1" colspan="1">reject</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#verifier-result" class="auto internal xref">Section 8.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_UNSUPPORTED_ALGORITHM</td>
+              <td class="text-left" rowspan="1" colspan="1">reject</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#verifier-result" class="auto internal xref">Section 8.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_INVALID_SIGNATURE</td>
+              <td class="text-left" rowspan="1" colspan="1">reject</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#verifier-result" class="auto internal xref">Section 8.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_KEY_BINDING_FAILED</td>
+              <td class="text-left" rowspan="1" colspan="1">reject</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#verifier-result" class="auto internal xref">Section 8.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_TIMESTAMP_INVALID</td>
+              <td class="text-left" rowspan="1" colspan="1">reject</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#verifier-result" class="auto internal xref">Section 8.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_UNKNOWN_BOUNDARY_TYPE</td>
+              <td class="text-left" rowspan="1" colspan="1">reject</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#iana-boundary-types" class="auto internal xref">Section 11.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_MISSING_CAPABILITIES</td>
+              <td class="text-left" rowspan="1" colspan="1">downgrade</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#cc-maxcap" class="auto internal xref">Section 4.1.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_CAPABILITY_BELOW_CLAIM</td>
+              <td class="text-left" rowspan="1" colspan="1">downgrade</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#cc-maxcap" class="auto internal xref">Section 4.1.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_BOUNDARY_CEILING_EXCEEDED</td>
+              <td class="text-left" rowspan="1" colspan="1">downgrade</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#honesty-boundary" class="auto internal xref">Section 7.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_MISSING_REQUIRED_EVIDENCE</td>
+              <td class="text-left" rowspan="1" colspan="1">downgrade</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#verifier-downgrade" class="auto internal xref">Section 8.2.1</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_EVIDENCE_NOT_BOUND</td>
+              <td class="text-left" rowspan="1" colspan="1">downgrade</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#honesty-evidence" class="auto internal xref">Section 7.4</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_RECORDER_CEILING_EXCEEDED</td>
+              <td class="text-left" rowspan="1" colspan="1">downgrade</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#honesty-recorder" class="auto internal xref">Section 7.2</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_CHAIN_INFLATION</td>
+              <td class="text-left" rowspan="1" colspan="1">downgrade</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#verifier-composition" class="auto internal xref">Section 8.2</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_UNKNOWN_CRITICAL_EXTENSION</td>
+              <td class="text-left" rowspan="1" colspan="1">reject</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#verifier-failure" class="auto internal xref">Section 8.3</a> (this document)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">E_PROVENANCE_RUNTIME_CONFUSION</td>
+              <td class="text-left" rowspan="1" colspan="1">policy</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <a href="#security" class="auto internal xref">Section 10</a> (this document)</td>
+            </tr>
+          </tbody>
+        </table>
+</section>
+</div>
+<div id="iana-reserved">
+<section id="section-11.3">
+        <h3 id="name-wexp-profiles-reserved">
+<a href="#section-11.3" class="section-number selfRef">11.3. </a><a href="#name-wexp-profiles-reserved" class="section-name selfRef">WEXP Profiles (reserved)</a>
+        </h3>
+<p id="section-11.3-1">The WEXP Profiles registry is reserved by this document and will be specified in a subsequent revision under the Specification Required <span>[<a href="#RFC8126" class="cite xref">RFC8126</a>]</span> policy. The Conformance Classes CC0-CC5 are defined normatively in <a href="#cc-scale" class="auto internal xref">Section 4.1</a>; this document does not request an IANA registry for them. No values are registered here.<a href="#section-11.3-1" class="pilcrow">¶</a></p>
+<p id="section-11.3-2">Unknown registered values MUST be handled deterministically. Profiles MUST NOT introduce unregistered boundary types without a corresponding registry update.<a href="#section-11.3-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="sec-combined-references">
+<section id="section-12">
+      <h2 id="name-references">
+<a href="#section-12" class="section-number selfRef">12. </a><a href="#name-references" class="section-name selfRef">References</a>
+      </h2>
+<div id="sec-normative-references">
+<section id="section-12.1">
+        <h3 id="name-normative-references">
+<a href="#section-12.1" class="section-number selfRef">12.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+        <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8032">[RFC8032]</dt>
+        <dd>
+<span class="refAuthor">Josefsson, S.</span> and <span class="refAuthor">I. Liusvaara</span>, <span class="refTitle">"Edwards-Curve Digital Signature Algorithm (EdDSA)"</span>, <span class="seriesInfo">RFC 8032</span>, <span class="seriesInfo">DOI 10.17487/RFC8032</span>, <time datetime="2017-01" class="refDate">January 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8032">https://www.rfc-editor.org/rfc/rfc8032</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8126">[RFC8126]</dt>
+        <dd>
+<span class="refAuthor">Cotton, M.</span>, <span class="refAuthor">Leiba, B.</span>, and <span class="refAuthor">T. Narten</span>, <span class="refTitle">"Guidelines for Writing an IANA Considerations Section in RFCs"</span>, <span class="seriesInfo">BCP 26</span>, <span class="seriesInfo">RFC 8126</span>, <span class="seriesInfo">DOI 10.17487/RFC8126</span>, <time datetime="2017-06" class="refDate">June 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8126">https://www.rfc-editor.org/rfc/rfc8126</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+        <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8610">[RFC8610]</dt>
+        <dd>
+<span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Vigano, C.</span>, and <span class="refAuthor">C. Bormann</span>, <span class="refTitle">"Concise Data Definition Language (CDDL): A Notational Convention to Express Concise Binary Object Representation (CBOR) and JSON Data Structures"</span>, <span class="seriesInfo">RFC 8610</span>, <span class="seriesInfo">DOI 10.17487/RFC8610</span>, <time datetime="2019-06" class="refDate">June 2019</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8610">https://www.rfc-editor.org/rfc/rfc8610</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8785">[RFC8785]</dt>
+      <dd>
+<span class="refAuthor">Rundgren, A.</span>, <span class="refAuthor">Jordan, B.</span>, and <span class="refAuthor">S. Erdtman</span>, <span class="refTitle">"JSON Canonicalization Scheme (JCS)"</span>, <span class="seriesInfo">RFC 8785</span>, <span class="seriesInfo">DOI 10.17487/RFC8785</span>, <time datetime="2020-06" class="refDate">June 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8785">https://www.rfc-editor.org/rfc/rfc8785</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="sec-informative-references">
+<section id="section-12.2">
+        <h3 id="name-informative-references">
+<a href="#section-12.2" class="section-number selfRef">12.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="ACTA-RECEIPTS">[ACTA-RECEIPTS]</dt>
+        <dd>
+<span class="refAuthor">Farley, T.</span>, <span class="refTitle">"Signed Decision Receipts for Machine-to-Machine Access Control"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-farley-acta-signed-receipts-02</span>, <time datetime="2026-06-28" class="refDate">28 June 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-farley-acta-signed-receipts-02">https://datatracker.ietf.org/doc/html/draft-farley-acta-signed-receipts-02</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="AGENT-AUDIT-TRAIL">[AGENT-AUDIT-TRAIL]</dt>
+        <dd>
+<span class="refAuthor">Sharif, R.</span>, <span class="refTitle">"Agent Audit Trail: A Standard Logging Format for Autonomous AI Systems"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-sharif-agent-audit-trail-00</span>, <time datetime="2026-03" class="refDate">March 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-sharif-agent-audit-trail-00">https://datatracker.ietf.org/doc/html/draft-sharif-agent-audit-trail-00</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="AR4SI">[AR4SI]</dt>
+        <dd>
+<span class="refAuthor">Voit, E.</span>, <span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Hardjono, T.</span>, <span class="refAuthor">Fossati, T.</span>, and <span class="refAuthor">V. Scarlata</span>, <span class="refTitle">"Attestation Results for Secure Interactions"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-rats-ar4si-10</span>, <time datetime="2026-05-18" class="refDate">18 May 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-rats-ar4si-10">https://datatracker.ietf.org/doc/html/draft-ietf-rats-ar4si-10</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="ASQAV-COMPLIANCE">[ASQAV-COMPLIANCE]</dt>
+        <dd>
+<span class="refAuthor">Marques, J. A. G.</span>, <span class="refTitle">"Compliance Profile of Signed Action Receipts for AI Agents"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-marques-asqav-compliance-receipts-06</span>, <time datetime="2026-07-01" class="refDate">1 July 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-marques-asqav-compliance-receipts-06">https://datatracker.ietf.org/doc/html/draft-marques-asqav-compliance-receipts-06</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="AUDIT-ARCH">[AUDIT-ARCH]</dt>
+        <dd>
+<span class="refAuthor">Kuehlewind, M.</span> and <span class="refAuthor">H. Birkholz</span>, <span class="refTitle">"An Architecture for Auditing AI Agent Delegation and Interactions"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-kuehlewind-audit-architecture-00</span>, <time datetime="2026-05" class="refDate">May 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-kuehlewind-audit-architecture-00">https://datatracker.ietf.org/doc/html/draft-kuehlewind-audit-architecture-00</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="DRP">[DRP]</dt>
+        <dd>
+<span class="refAuthor">Nelson, R.</span>, <span class="refTitle">"Delegation Receipt Protocol for AI Agent Authorization"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-nelson-agent-delegation-receipts-10</span>, <time datetime="2026-06-13" class="refDate">13 June 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-nelson-agent-delegation-receipts-10">https://datatracker.ietf.org/doc/html/draft-nelson-agent-delegation-receipts-10</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="POB">[POB]</dt>
+        <dd>
+<span class="refAuthor">Dembowski, J.</span>, <span class="refTitle">"Proof-of-Behavior Protocol for Autonomous AI Agents"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-dembowski-agentledger-proof-of-behavior-00</span>, <time datetime="2026-04-20" class="refDate">20 April 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-dembowski-agentledger-proof-of-behavior-00">https://datatracker.ietf.org/doc/html/draft-dembowski-agentledger-proof-of-behavior-00</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC7696">[RFC7696]</dt>
+        <dd>
+<span class="refAuthor">Housley, R.</span>, <span class="refTitle">"Guidelines for Cryptographic Algorithm Agility and Selecting Mandatory-to-Implement Algorithms"</span>, <span class="seriesInfo">BCP 201</span>, <span class="seriesInfo">RFC 7696</span>, <span class="seriesInfo">DOI 10.17487/RFC7696</span>, <time datetime="2015-11" class="refDate">November 2015</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7696">https://www.rfc-editor.org/rfc/rfc7696</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC7942">[RFC7942]</dt>
+        <dd>
+<span class="refAuthor">Sheffer, Y.</span> and <span class="refAuthor">A. Farrel</span>, <span class="refTitle">"Improving Awareness of Running Code: The Implementation Status Section"</span>, <span class="seriesInfo">BCP 205</span>, <span class="seriesInfo">RFC 7942</span>, <span class="seriesInfo">DOI 10.17487/RFC7942</span>, <time datetime="2016-07" class="refDate">July 2016</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7942">https://www.rfc-editor.org/rfc/rfc7942</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9334">[RFC9334]</dt>
+        <dd>
+<span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Thaler, D.</span>, <span class="refAuthor">Richardson, M.</span>, <span class="refAuthor">Smith, N.</span>, and <span class="refAuthor">W. Pan</span>, <span class="refTitle">"Remote ATtestation procedureS (RATS) Architecture"</span>, <span class="seriesInfo">RFC 9334</span>, <span class="seriesInfo">DOI 10.17487/RFC9334</span>, <time datetime="2023-01" class="refDate">January 2023</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9334">https://www.rfc-editor.org/rfc/rfc9334</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SCITT">[SCITT]</dt>
+        <dd>
+<span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Delignat-Lavaud, A.</span>, <span class="refAuthor">Fournet, C.</span>, <span class="refAuthor">Deshpande, Y.</span>, and <span class="refAuthor">S. Lasker</span>, <span class="refTitle">"An Architecture for Trustworthy and Transparent Digital Supply Chains"</span>, <span class="seriesInfo">RFC 9943</span>, <span class="seriesInfo">DOI 10.17487/RFC9943</span>, <time datetime="2026-06" class="refDate">June 2026</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9943">https://www.rfc-editor.org/rfc/rfc9943</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SLSA">[SLSA]</dt>
+        <dd>
+<span class="refTitle">"Supply-chain Levels for Software Artifacts (SLSA)"</span>, <span>&lt;<a href="https://slsa.dev">https://slsa.dev</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="VAC">[VAC]</dt>
+        <dd>
+<span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Heldt, T.</span>, and <span class="refAuthor">O. Steele</span>, <span class="refTitle">"Verifiable Agent Conversation Records"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-birkholz-verifiable-agent-conversations-00</span>, <time datetime="2026-02-25" class="refDate">25 February 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-birkholz-verifiable-agent-conversations-00">https://datatracker.ietf.org/doc/html/draft-birkholz-verifiable-agent-conversations-00</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="VAP-LAP">[VAP-LAP]</dt>
+        <dd>
+<span class="refAuthor">Yamakawa, A.</span>, <span class="refTitle">"Verifiable AI Provenance (VAP) Framework and Legal AI Profile (LAP)"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ailex-vap-legal-ai-provenance-03</span>, <time datetime="2026-03" class="refDate">March 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ailex-vap-legal-ai-provenance-03">https://datatracker.ietf.org/doc/html/draft-ailex-vap-legal-ai-provenance-03</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="VERIFICATION-STATE">[VERIFICATION-STATE]</dt>
+        <dd>
+<span class="refAuthor">Krausz, J.</span>, <span class="refTitle">"The verification.* Constraint Family: Pre-Action Fail-Closed Gates for AI Agent Decisions"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-krausz-verification-state-01</span>, <time datetime="2026-06-12" class="refDate">12 June 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-krausz-verification-state-01">https://datatracker.ietf.org/doc/html/draft-krausz-verification-state-01</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="WIMSE">[WIMSE]</dt>
+        <dd>
+<span class="refTitle">"WIMSE Workload Credentials"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-wimse-workload-creds-02</span>, <time datetime="2026-07" class="refDate">July 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-wimse-workload-creds-02">https://datatracker.ietf.org/doc/html/draft-ietf-wimse-workload-creds-02</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="WITNESSABILITY">[WITNESSABILITY]</dt>
+      <dd>
+<span class="refAuthor">Sergeev, M. A.</span> and <span class="refAuthor">V. Ikher</span>, <span class="refTitle">"Toward a Witnessability Model for AI and Software Execution Systems: A Boundary-Based Framework for Classifying Execution Evidence"</span>, <span class="seriesInfo">SSRN Abstract 6994720</span>, <time datetime="2026" class="refDate">2026</time>, <span>&lt;<a href="https://ssrn.com/abstract=6994720">https://ssrn.com/abstract=6994720</a>&gt;</span>. <span class="annotation">Deposited with SSRN; public posting pending at the time of this draft.</span>
+        </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+</section>
+</div>
+<div id="appendix-scitt">
+<section id="appendix-A">
+      <h2 id="name-scitt-mapping-wl4-wl5">
+<a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-scitt-mapping-wl4-wl5" class="section-name selfRef">SCITT Mapping (WL4-WL5)</a>
+      </h2>
+<p id="appendix-A-1">This appendix is informative. WEXP is complementary to supply-chain transparency efforts. It maps WEXP WL4-WL5 evidence to SCITT <span>[<a href="#SCITT" class="cite xref">SCITT</a>]</span> vocabulary, so that a WEXP provenance artifact (WL4) and an independent-verification path (WL5) can be expressed against, or cross-checked with, a SCITT transparency service. WEXP remains a meta-layer over such services: it classifies what their receipts can honestly claim, rather than competing with them. Detailed field-level mapping will be provided in a subsequent revision.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="appendix-audit">
+<section id="appendix-B">
+      <h2 id="name-mapping-to-the-ai-agent-aud">
+<a href="#appendix-B" class="section-number selfRef">Appendix B. </a><a href="#name-mapping-to-the-ai-agent-aud" class="section-name selfRef">Mapping to the AI Agent Audit Architecture</a>
+      </h2>
+<p id="appendix-B-1">This appendix is informative. WEXP relates to the proposed work items of <span>[<a href="#AUDIT-ARCH" class="cite xref">AUDIT-ARCH</a>]</span> in two distinct modes. At the contribution points WEXP supplies semantics the architecture does not define; at the composition points WEXP consumes an existing substrate without adding core semantics. WEXP does not redefine identity, attestation, transparency, or context-propagation substrates.<a href="#appendix-B-1" class="pilcrow">¶</a></p>
+<div id="appendix-audit-contribution">
+<section id="appendix-B.1">
+        <h3 id="name-contribution-points-wexp-su">
+<a href="#appendix-B.1" class="section-number selfRef">B.1. </a><a href="#name-contribution-points-wexp-su" class="section-name selfRef">Contribution points (WEXP supplies what the data models do not define)</a>
+        </h3>
+<p id="appendix-B.1-1">WI-1 (Audit Data Models and Semantics): WEXP contributes the evidential-status semantics absent from the record structure -- the boundary-derived claim ceiling (verified_level &lt;= attainable(boundary_type, claimed_level, evidence)), the verifier verdict of accept, reject, or downgrade, non-inflation under composition, and fail-closed handling of unknown-critical content. WEXP is a semantic layer for WI-1, not a competing data model.<a href="#appendix-B.1-1" class="pilcrow">¶</a></p>
+<p id="appendix-B.1-2">WI-4 (Action Record Profile): WEXP contributes a claimed_level bound to the boundary_type at which the action took effect, so that an Action Record produced "at the boundary" cannot claim more than that boundary can honestly witness. Placement (WI-4's concern) and claim strength (WEXP's contribution) are distinct.<a href="#appendix-B.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="appendix-audit-composition">
+<section id="appendix-B.2">
+        <h3 id="name-composition-points-wexp-con">
+<a href="#appendix-B.2" class="section-number selfRef">B.2. </a><a href="#name-composition-points-wexp-con" class="section-name selfRef">Composition points (WEXP consumes an existing substrate; no core semantics added)</a>
+        </h3>
+<p id="appendix-B.2-1">WI-6 (Profile of RATS Evidence): WEXP consumes RATS <span>[<a href="#RFC9334" class="cite xref">RFC9334</a>]</span> Evidence and Attestation Results as environmental evidence inputs. RATS is not required by WEXP Core; profiles MAY use attestation evidence to ground a higher published Conformance Class, which Core still resolves only through <code>capabilities_ref</code> (<a href="#cc-maxcap" class="auto internal xref">Section 4.1.1</a>). WEXP adds no attestation semantics of its own here.<a href="#appendix-B.2-1" class="pilcrow">¶</a></p>
+<p id="appendix-B.2-2">WI-7 (Profile of SCITT Transparency): WEXP treats a SCITT <span>[<a href="#SCITT" class="cite xref">SCITT</a>]</span> receipt as custody/existence evidence -- it establishes existence and content at registration, not the truth of the underlying claim. A WEXP record MAY be carried as a SCITT-registered payload or a receipt-bound artifact. WEXP defines no transparency service.<a href="#appendix-B.2-2" class="pilcrow">¶</a></p>
+<p id="appendix-B.2-3">WI-11 (Audit Context Propagation): WEXP uses audit trace, parent, and delegation-chain references as context bindings only. Correlation is not proof of authorization; WEXP does not treat propagated context as a positive claim.<a href="#appendix-B.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="appendix-audit-mapping">
+<section id="appendix-B.3">
+        <h3 id="name-record-role-mapping">
+<a href="#appendix-B.3" class="section-number selfRef">B.3. </a><a href="#name-record-role-mapping" class="section-name selfRef">Record/role mapping</a>
+        </h3>
+<table class="center" id="table-7">
+          <caption><a href="#table-7" class="selfRef">Table 7</a></caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">AUDIT Architecture record/role</th>
+              <th class="text-left" rowspan="1" colspan="1">WEXP role</th>
+              <th class="text-left" rowspan="1" colspan="1">Mode</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Interaction Record</td>
+              <td class="text-left" rowspan="1" colspan="1">evidence input (interaction-scoped)</td>
+              <td class="text-left" rowspan="1" colspan="1">input</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Action Record (boundary of effect)</td>
+              <td class="text-left" rowspan="1" colspan="1">boundary-observation evidence; boundary sets ceiling</td>
+              <td class="text-left" rowspan="1" colspan="1">contribution (WI-4)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Delegation Record</td>
+              <td class="text-left" rowspan="1" colspan="1">authority-chain evidence (correlation, not proof)</td>
+              <td class="text-left" rowspan="1" colspan="1">input</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Authorization Transition Record</td>
+              <td class="text-left" rowspan="1" colspan="1">temporal-authorization evidence</td>
+              <td class="text-left" rowspan="1" colspan="1">input</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Audit Context (trace/parent/OBO)</td>
+              <td class="text-left" rowspan="1" colspan="1">context binding -- correlation, not proof</td>
+              <td class="text-left" rowspan="1" colspan="1">composition (WI-11)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">RATS Evidence / Attestation Result</td>
+              <td class="text-left" rowspan="1" colspan="1">environmental evidence input (not required by Core)</td>
+              <td class="text-left" rowspan="1" colspan="1">composition (WI-6)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">SCITT Receipt</td>
+              <td class="text-left" rowspan="1" colspan="1">custody/existence evidence (not truth-of-claim)</td>
+              <td class="text-left" rowspan="1" colspan="1">composition (WI-7)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">Auditor</td>
+              <td class="text-left" rowspan="1" colspan="1">verifier (accept / reject / downgrade)</td>
+              <td class="text-left" rowspan="1" colspan="1">contribution (WI-1)</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">verification result</td>
+              <td class="text-left" rowspan="1" colspan="1">portable bounded-claim execution receipt</td>
+              <td class="text-left" rowspan="1" colspan="1">output</td>
+            </tr>
+          </tbody>
+        </table>
+</section>
+</div>
+</section>
+</div>
+<div id="appendix-rationale">
+<section id="appendix-C">
+      <h2 id="name-design-rationale-non-normat">
+<a href="#appendix-C" class="section-number selfRef">Appendix C. </a><a href="#name-design-rationale-non-normat" class="section-name selfRef">Design Rationale (non-normative)</a>
+      </h2>
+<p id="appendix-C-1">This appendix preserves internal design-record provenance for the frozen Core decisions. These records are non-normative and do not alter the requirements above.<a href="#appendix-C-1" class="pilcrow">¶</a></p>
+<table class="center" id="table-8">
+        <caption><a href="#table-8" class="selfRef">Table 8</a></caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Frozen Core rationale marker</th>
+            <th class="text-left" rowspan="1" colspan="1">Non-normative rationale preserved here</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WEXP-R-01</td>
+            <td class="text-left" rowspan="1" colspan="1">Criticality, reversibility, operational domain, and custody are not WEXP axes. They may influence policy or profile requirements, but they are not witnessability levels.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WEXP-R-02</td>
+            <td class="text-left" rowspan="1" colspan="1">Policy is orthogonal to Witnessability Level and is profile-scoped. At WL2, <code>policy</code> and timing are optional and are not Core-required.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WEXP-R-03</td>
+            <td class="text-left" rowspan="1" colspan="1">Conformance Class is not a per-record self-claim; it is reachable only by reference, for example through <code>capabilities_ref</code>.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WEXP-R-04</td>
+            <td class="text-left" rowspan="1" colspan="1">A Core record validates standalone, without a profile.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WEXP-R-05</td>
+            <td class="text-left" rowspan="1" colspan="1">WL4 and WL5 evidence is honored only when carried as top-level evidence; it is never carried in extensions.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WEXP-R-06</td>
+            <td class="text-left" rowspan="1" colspan="1">WL2 requires <code>input.arguments_hash</code> only as invocation evidence. Policy and timing remain optional at Core level.</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">WEXP-R-07</td>
+            <td class="text-left" rowspan="1" colspan="1">WL1 (Intent) requires <code>input.arguments_hash</code> so the intent claim is bound to specific arguments. Without this commitment an Intent claim would be a bare, non-falsifiable self-assertion, since arguments could be substituted later against the same record; the hash pins the claimed intent without storing the raw payload (Minimal Evidence floor). At WL2 the same hash additionally serves as invocation evidence.</td>
+          </tr>
+        </tbody>
+      </table>
+</section>
+</div>
+<div id="disclosure">
+<section id="appendix-D">
+      <h2 id="name-disclosure">
+<a href="#appendix-D" class="section-number selfRef">Appendix D. </a><a href="#name-disclosure" class="section-name selfRef">Disclosure</a>
+      </h2>
+<p id="appendix-D-1">One author, Mikhail Sergeev, has a commercial interest in execution-evidence and runtime-assurance tooling. WitSeal is the reference implementation of WEXP. This specification presents a vendor-neutral open protocol and does not describe, evaluate, or endorse any specific proprietary implementation.<a href="#appendix-D-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-E">
+      <h2 id="name-authors-addresses">
+<a href="#name-authors-addresses" class="section-name selfRef">Authors' Addresses</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Mikhail Sergeev (<span class="role">editor</span>)</span></div>
+<div dir="auto" class="left"><span class="org">Independent Researcher</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:mikhailsergeev369@gmail.com" class="email">mikhailsergeev369@gmail.com</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Vladimir Ikher</span></div>
+<div dir="auto" class="left"><span class="org">Independent Researcher</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:ikherva@gmail.com" class="email">ikherva@gmail.com</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a29616373b9fd282',t:'MTc4NjQzOTIxMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

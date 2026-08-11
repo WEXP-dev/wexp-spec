@@ -1,0 +1,2016 @@
+
+
+
+
+Network Working Group                                    M. Sergeev, Ed.
+Internet-Draft                                                  V. Ikher
+Intended status: Informational                    Independent Researcher
+Expires: 6 January 2027                                      5 July 2026
+
+
+      The Witnessed Execution Protocol (WEXP): Core Specification
+                       draft-sergeev-wexp-core-00
+
+Abstract
+
+   The Witnessed Execution Protocol (WEXP) defines a record format and a
+   verification procedure for classifying the strength of execution-
+   related evidence about actions performed by software and AI systems.
+   A WEXP record asserts, for a single action, a Witnessability Level
+   (WL) bounded by the execution-relevant boundary that the witness
+   controls.  WEXP grades only the evidentiary strength of an execution
+   claim; it does not certify the action's correctness, safety, or
+   alignment.  This document specifies WEXP Core: the record model,
+   required fields, the two classification axes (Witnessability Level
+   and Conformance Class), the honesty invariants that bound claims, the
+   verifier procedure, and failure semantics.  WEXP Core is profile-
+   independent and validates standalone.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 6 January 2027.
+
+Copyright Notice
+
+   Copyright (c) 2026 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                 [Page 1]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Note to Readers (to be removed before publication)  . . . . .   3
+   2.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+     2.1.  Scope . . . . . . . . . . . . . . . . . . . . . . . . . .   4
+     2.2.  Relationship to Related Work  . . . . . . . . . . . . . .   5
+   3.  Conventions and Terminology . . . . . . . . . . . . . . . . .   7
+   4.  Witnessability Level (WL) and Conformance Class (CC)  . . . .   8
+     4.1.  Conformance Class (CC) scale  . . . . . . . . . . . . . .   9
+       4.1.1.  Implementation capability ceiling . . . . . . . . . .  10
+   5.  Record Model  . . . . . . . . . . . . . . . . . . . . . . . .  12
+   6.  Core Record Fields  . . . . . . . . . . . . . . . . . . . . .  13
+     6.1.  Conditional-required fields by claimed level  . . . . . .  13
+     6.2.  Core Record schema (CDDL) . . . . . . . . . . . . . . . .  14
+   7.  Honesty Invariants (Ceilings) . . . . . . . . . . . . . . . .  16
+     7.1.  Boundary Ceiling (MUST) . . . . . . . . . . . . . . . . .  16
+     7.2.  Recorder Ceiling (MUST when asserted) . . . . . . . . . .  18
+     7.3.  Minimal Evidence floor (SHOULD) . . . . . . . . . . . . .  18
+     7.4.  Evidence is required, not implied . . . . . . . . . . . .  18
+       7.4.1.  WL4 attainability . . . . . . . . . . . . . . . . . .  19
+   8.  Verifier Requirements . . . . . . . . . . . . . . . . . . . .  19
+     8.1.  Verifier result and verdict . . . . . . . . . . . . . . .  20
+     8.2.  Composition . . . . . . . . . . . . . . . . . . . . . . .  22
+       8.2.1.  Downgrade target for missing required evidence  . . .  22
+     8.3.  Safe failure  . . . . . . . . . . . . . . . . . . . . . .  23
+   9.  Implementation Status . . . . . . . . . . . . . . . . . . . .  23
+   10. Security Considerations . . . . . . . . . . . . . . . . . . .  24
+   11. IANA Considerations . . . . . . . . . . . . . . . . . . . . .  25
+     11.1.  WEXP Boundary Types  . . . . . . . . . . . . . . . . . .  26
+     11.2.  WEXP Error Codes . . . . . . . . . . . . . . . . . . . .  27
+     11.3.  WEXP Profiles (reserved) . . . . . . . . . . . . . . . .  29
+   12. References  . . . . . . . . . . . . . . . . . . . . . . . . .  29
+     12.1.  Normative References . . . . . . . . . . . . . . . . . .  29
+     12.2.  Informative References . . . . . . . . . . . . . . . . .  30
+   Appendix A.  SCITT Mapping (WL4-WL5)  . . . . . . . . . . . . . .  32
+   Appendix B.  Mapping to the AI Agent Audit Architecture . . . . .  32
+     B.1.  Contribution points (WEXP supplies what the data models do
+           not define) . . . . . . . . . . . . . . . . . . . . . . .  33
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                 [Page 2]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+     B.2.  Composition points (WEXP consumes an existing substrate; no
+           core semantics added) . . . . . . . . . . . . . . . . . .  33
+     B.3.  Record/role mapping . . . . . . . . . . . . . . . . . . .  33
+   Appendix C.  Design Rationale (non-normative) . . . . . . . . . .  34
+   Appendix D.  Disclosure . . . . . . . . . . . . . . . . . . . . .  36
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  36
+
+1.  Note to Readers (to be removed before publication)
+
+   The archival deposit of this specification is intended to be made
+   available under CC BY 4.0; the IETF Internet-Draft is contributed
+   under the IETF Trust's Legal Provisions (see the boilerplate).  The
+   reference implementation is being developed by WitSeal; no co-author
+   or party holds ownership, licensing exclusivity, or veto rights over
+   the specification.
+
+2.  Introduction
+
+   Modern AI and software systems produce many forms of execution-
+   related evidence -- logs, traces, approvals, tool-call records,
+   attestations, workflow histories -- that are frequently conflated.
+   The conceptual foundation for distinguishing the _strength_ of such
+   evidence is the Witnessability Model [WITNESSABILITY], which defines
+   six witnessability levels (WL0-WL5) and the Boundary Ceiling
+   Principle: a witness cannot honestly claim a level above the
+   strongest execution-relevant boundary it controls or can
+   independently verify.
+
+   WEXP operationalizes that model as a concrete, verifiable record
+   protocol.  Where the model is descriptive, WEXP is prescriptive: it
+   defines what a conforming record MUST contain at each claimed level,
+   and what a conforming verifier MUST check.
+
+   Attestation answers whether a record is authentic; a transparency
+   service answers whether it existed as claimed.  WEXP answers a third
+   question that neither resolves: given the available evidence and the
+   boundary at which it was obtained, what claim level is warranted?  A
+   related individual Internet-Draft proposes an architecture for
+   auditing AI-agent delegation and interactions [AUDIT-ARCH], whose
+   proposed work items include canonical audit data models and semantics
+   (WI-1) and an Action Record profile produced at the boundary where
+   each tool or service call took effect (WI-4).  That architecture
+   records, correlates, and attests audit records across delegation and
+   evolving authorization state; it does not define the evidential-
+   status semantics that bound what such a record may honestly claim
+   about execution.  WEXP supplies that layer: a boundary-derived claim
+   ceiling (verified_level <= attainable(boundary_type, claimed_level,
+   evidence)), a verifier verdict of accept, reject, or downgrade, non-
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                 [Page 3]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   inflation under composition, and fail-closed handling of unknown-
+   critical content.  WEXP is therefore an orthogonal contribution to
+   such audit data models -- specifically the claimed-level and ceiling
+   semantics for Action Records -- not a competing audit architecture or
+   data model.
+
+   WEXP intentionally separates three concerns that are often conflated:
+   (1) where an action is observed, (2) how authentic the resulting
+   record is, and (3) what evidential claim that record can honestly
+   support.
+
+   This document is differentiated by treating the boundary-derived
+   ceiling as a verifier-enforced protocol invariant, rather than as an
+   audit placement rule, attestation result, or transparency receipt.
+   WEXP makes no chronological priority claim.
+
+      Reference Implementation Non-Authority Clause.  Where a reference
+      implementation conflicts with this specification, the
+      specification prevails.  Where the specification is ambiguous, a
+      resolution document is required before implementation behavior
+      becomes normative.
+
+2.1.  Scope
+
+   This document specifies WEXP Core only.  Profiles (domain-specific
+   bindings) and Policy (Evidence Contract gating) are layered above
+   Core and are out of scope here, except where Core constrains them.  A
+   Core record MUST validate without reference to any profile.
+
+   To bound Core precisely, the following are explicitly out of scope
+   for this document and are left to profiles or future revisions:
+
+   *  This document does not define a COSE or JWS envelope profile.
+
+   *  This document does not define internal provenance or independent-
+      verification evidence schemas.
+
+   *  This document does not define trust-anchor discovery or
+      revocation.
+
+   *  This document does not define chain construction, segment
+      discovery, or delegation linkage.
+
+   *  This document does not define a capabilities-document format
+      beyond the fail-closed handling of capabilities_ref
+      (Section 4.1.1).
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                 [Page 4]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   These deferred items are expected to be addressed by separate WEXP
+   profiles, developed independently of and layered above this Core
+   document.  Such profiles are anticipated to bind WEXP records to
+   existing mechanisms rather than re-specify them -- for example, a
+   JOSE or COSE serialization profile, a boundary-grounding profile
+   referencing RATS attestation evidence, provenance and independent-
+   verification profiles aligned with supply-chain and transparency work
+   (for example, [SCITT]), and deployment profiles that map WEXP
+   evidence onto external record-keeping regimes.  These profiles are
+   informative with respect to this document: they extend and depend on
+   Core, but a Core record is complete and verifiable without any of
+   them (Section 8).
+
+2.2.  Relationship to Related Work
+
+   [AUDIT-ARCH] describes an architectural framework for distributed
+   audit-record generation, audit-context propagation, attestation, and
+   transparency logging in agent-driven interactions, and identifies
+   candidate record types and IETF substrate profiles (RATS, SCITT,
+   OAuth, WIMSE).  It independently arrives at recorder independence (a
+   record produced at the boundary, not as reported by the agent; an
+   agent that records itself cannot deliver non-repudiation to a third
+   party).  WEXP is complementary: it does not define an agent audit
+   architecture, an identity substrate, or a transparency service.  It
+   defines verifier-facing evidence-to-claim semantics -- the boundary-
+   derived claim ceiling, the accept/reject/downgrade verdict, non-
+   inflation, and fail-closed handling -- that [AUDIT-ARCH] does not
+   specify.  In [AUDIT-ARCH] terms these belong in WI-1 as the claimed-
+   level and ceiling semantics the data models require but do not
+   define, with the WI-4 Action Record profile carrying the claimed
+   level.
+
+   A parallel line of work, [ACTA-RECEIPTS], defines a portable signed
+   receipt format for machine-to-machine access-control decisions.  A
+   subsequent profile, [ASQAV-COMPLIANCE], binds [ACTA-RECEIPTS] fields
+   to specific regulatory obligations including EU AI Act Articles 12
+   and 26 and DORA Article 17.  WEXP is complementary to both:
+   [ACTA-RECEIPTS] specifies a wire format and verification procedure
+   for signed decision records; WEXP specifies the _evidential-status
+   semantics_ -- the boundary-derived claim ceiling, the verifier
+   verdict of accept/reject/downgrade, non-inflation under composition,
+   and fail-closed handling of unknown-critical content -- that bound
+   what claim level any such record can honestly support.  A WEXP record
+   MAY be carried as an artifact in the [ACTA-RECEIPTS] format.  Where
+   an ACTA or ASQAV receipt carries a correlation identifier such as
+   action_ref, a WEXP profile MAY use that value as a correlation hint
+   between the receipt and the WEXP record witnessing the same action;
+   such correlation is not execution evidence, is not required by WEXP
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                 [Page 5]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   Core, and does not raise the verified level.  The WEXP layer adds the
+   claim-strength semantics that the receipt format itself does not
+   specify.  WEXP defines no transparency service, no identity
+   substrate, and no decision-recording wire format of its own -- it is
+   the evidential-status layer over such substrates.
+
+   Additional Internet-Drafts in adjacent slots include
+   [AGENT-AUDIT-TRAIL], which specifies a hash-chained logging format
+   with trust outcome levels, and [VERIFICATION-STATE], which specifies
+   a pre-action fail-closed gate primitive that may be wrapped in a
+   [SCITT] envelope.  WEXP is complementary to these:
+   [AGENT-AUDIT-TRAIL] specifies how audit records are stored and
+   chained; [VERIFICATION-STATE] specifies a gate primitive applied
+   before action execution.  WEXP specifies the claim-strength taxonomy
+   that bounds what any such record or gate-result may honestly assert,
+   and the verifier ladder that enforces it.
+
+   Further adjacent drafts include [VAC], a conversation-record format
+   for agent sessions with post-hoc divergence detection; [POB], which
+   combines signed behavior receipts, hash-chain linking, and a pre-
+   execution policy gate; and [DRP], which specifies pre-action
+   delegation receipts anchored to an append-only log -- an
+   authorization-plane object attesting what was authorized rather than
+   what occurred.  WEXP defines none of these objects; it defines the
+   claim-strength semantics that bound what any such record, gate
+   result, or delegation trace may honestly assert.
+
+   Two adjacent level schemes deserve explicit contrast.  SLSA [SLSA]
+   defines graduated build-integrity levels for the software supply
+   chain: as in WEXP, a claim is bounded by the strength of the platform
+   boundary that produced the evidence, but SLSA grades the build
+   provenance of artifacts, not runtime execution events -- WEXP applies
+   the same discipline to runtime actions, and a SLSA provenance
+   statement is one natural source of the WL4 provenance artifact.
+   Within the IETF, RATS Attestation Results for Secure Interactions
+   [AR4SI] grades the trustworthiness of an attested environment from
+   appraised evidence; WEXP grades the claim strength of an execution-
+   event record, with environment attestation as one input that can
+   raise the attainable level (Appendix B).  Neither scheme defines a
+   claim ceiling bound to the execution boundary of a specific action;
+   that is the layer WEXP specifies.
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                 [Page 6]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+3.  Conventions and Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in BCP
+   14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+   *  *Witness.* A system, component, runtime, service, process,
+      organization, or verifier that records or verifies evidence about
+      an action.
+
+   *  *Action.* An operation performed by a software or AI system that
+      changes state, produces output, invokes a tool, executes code, or
+      otherwise affects an environment.
+
+   *  *Boundary.* A control surface across which an action is observed,
+      approved, invoked, executed, linked to provenance, or verified.
+
+   *  *WEXP Record.* A structured artifact conforming to this
+      specification that asserts an execution-evidence claim at a stated
+      Witnessability Level.
+
+   *  *Witnessability Level (WL).* A record-scoped level, WL0-WL5,
+      expressing how deeply the runtime action is witnessed through the
+      execution boundary (see [WITNESSABILITY] for the model).
+
+   *  *Conformance Class (CC).* An implementation-scoped class, CC0-CC5,
+      expressing how technically verifiable a record is.
+
+   Relationship to WIMSE: WEXP and its reference implementation are
+   distinct from the WIMSE Workload Identity Credential (WIT) [WIMSE].
+   A bounded-claim execution record is evidence about what occurred at a
+   boundary, not a workload identity credential, and does not replace
+   WIT.
+
+   *Note on Witnessability Level (WL) Versus Other Level Schemes.*
+   Numbered trust levels and graded conformance tiers appear in adjacent
+   specifications and informal industry discussion (for example, trust
+   outcome levels in [AGENT-AUDIT-TRAIL], Bronze/Silver/Gold conformance
+   tiers in [VAP-LAP], and the multi-layer agent trust models discussed
+   in industry analyses).  These schemes classify outcome quality,
+   infrastructure capability, or authorization-stack position.  WEXP WL
+   is distinct: it classifies the _claim-strength_ that a record can
+   honestly support given the _boundary_ at which the evidence was
+   produced.  WL is an _epistemic ceiling_ on what a witness may assert,
+   not a trust rating, infrastructure grade, authorization tier, or
+   maturity score.  A WL3 record is not "more trusted" than a WL1
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                 [Page 7]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   record; it is a claim about a stronger execution-evidence boundary
+   having been controlled or independently verified.  Whether a
+   particular witness is honest or compromised is a question of
+   attribution and grounding, not of the level taxonomy: the boundary
+   assertion, its CC-bound attribution, and their limits are specified
+   in Section 7.4.
+
+4.  Witnessability Level (WL) and Conformance Class (CC)
+
+   WEXP separates two orthogonal axes.
+
+   The Core interpretation of each Witnessability Level, used by the
+   verifier, is:
+
+   +=====+============================================================+
+   | WL  | Core interpretation                                        |
+   +=====+============================================================+
+   | WL0 | No execution-evidence claim is verified.                   |
+   +-----+------------------------------------------------------------+
+   | WL1 | Intent or approval is bound to the action arguments.       |
+   +-----+------------------------------------------------------------+
+   | WL2 | Invocation crossed an observed boundary.                   |
+   +-----+------------------------------------------------------------+
+   | WL3 | Execution was observed at an execution-ownership boundary. |
+   +-----+------------------------------------------------------------+
+   | WL4 | WL3 plus a bound top-level provenance artifact.            |
+   +-----+------------------------------------------------------------+
+   | WL5 | WL3 plus a bound top-level independent-verification        |
+   |     | artifact.                                                  |
+   +-----+------------------------------------------------------------+
+
+                                 Table 1
+
+   This table defines the Core interpretation used by the verifier.  It
+   does not define provenance, attestation, independent-verification,
+   policy, or trust-anchor schemas.
+
+   WL4 and WL5 are sibling evidence lifts over the WL3 base: WL4 adds a
+   bound provenance artifact, WL5 a bound independent-verification
+   artifact.  WL5 is ordered above WL4 for verifier ceiling comparison
+   (Section 8), but a WL5 claim does not imply the presence of a
+   provenance artifact unless required by a profile or policy.  A policy
+   that requires provenance MUST require it explicitly and MUST NOT
+   infer it from verified_level >= WL4.
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                 [Page 8]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   *Witnessability Level (WL)* is _record-scoped_: it describes how
+   deeply a specific runtime action is witnessed through the execution
+   boundary.  WL ranges over WL0-WL5 as defined by the Witnessability
+   Model.
+
+   *Conformance Class (CC)* is _implementation-scoped_: it describes how
+   technically verifiable a record is, independent of any single
+   record's content.  CC ranges over CC0-CC5.  CC MUST NOT be a per-
+   record self-claim; it is reachable only by reference (via a
+   capabilities_ref to the implementation's published capabilities).
+
+   Criticality, reversibility, operational domain, and custody are not
+   axes of WEXP.  They MAY influence the minimum required WL or CC via
+   policy or profiles, but they are not witnessability levels and MUST
+   NOT be encoded as such.
+
+4.1.  Conformance Class (CC) scale
+
+   Conformance Class is implementation-scoped and ranges over CC0-CC5.
+   CC describes how technically verifiable an implementation's records
+   are; it MUST NOT be a per-record self-claim and is reachable only by
+   reference, via a capabilities_ref to the implementation's published
+   capabilities.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                 [Page 9]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+    +=====+=============+============================================+
+    | CC  | Name        | Requirement                                |
+    +=====+=============+============================================+
+    | CC0 | No          | The implementation does not meet WEXP      |
+    |     | conformance | structural requirements.                   |
+    +-----+-------------+--------------------------------------------+
+    | CC1 | Structural  | The implementation emits records that      |
+    |     |             | validate against the Core schema.          |
+    +-----+-------------+--------------------------------------------+
+    | CC2 | Signature   | The implementation additionally emits      |
+    |     |             | records that carry a valid signature over  |
+    |     |             | the canonical signing input, per seal.alg  |
+    |     |             | (Section 8).                               |
+    +-----+-------------+--------------------------------------------+
+    | CC3 | Bound       | The implementation additionally binds each |
+    |     |             | signature to a verified key identity; at   |
+    |     |             | CC3 and above a boundary_type assertion is |
+    |     |             | attributed to that identity (stronger      |
+    |     |             | grounding of the assertion is out of scope |
+    |     |             | for Core; see Section 7.4).                |
+    +-----+-------------+--------------------------------------------+
+    | CC4 | Composed    | The implementation additionally verifies   |
+    |     |             | chains under composition without inflation |
+    |     |             | (see Section 8.2).                         |
+    +-----+-------------+--------------------------------------------+
+    | CC5 | Independent | The implementation additionally produces   |
+    |     |             | records independently verifiable by a      |
+    |     |             | third party without the issuer.            |
+    +-----+-------------+--------------------------------------------+
+
+                                 Table 2
+
+   The classes are cumulative: CCn includes the capabilities of CCn-1.
+   CC is orthogonal to a record's Witnessability Level: a high-CC
+   implementation MAY emit low-WL records.
+
+4.1.1.  Implementation capability ceiling
+
+   Each Conformance Class has a maximum Witnessability Level it can
+   ground, maxCapability(CC):
+
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 10]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+                        +=====+===================+
+                        | CC  | maxCapability(CC) |
+                        +=====+===================+
+                        | CC0 | WL0               |
+                        +-----+-------------------+
+                        | CC1 | WL0               |
+                        +-----+-------------------+
+                        | CC2 | WL2               |
+                        +-----+-------------------+
+                        | CC3 | WL3               |
+                        +-----+-------------------+
+                        | CC4 | WL4               |
+                        +-----+-------------------+
+                        | CC5 | WL5               |
+                        +-----+-------------------+
+
+                                  Table 3
+
+   The full Boundary Ceiling invariant (Section 7.1) therefore caps a
+   claim by BOTH the boundary-and-evidence attainable level and the
+   implementation Conformance Class:
+
+   verified_level <= min(
+       attainable(boundary_type, claimed_level, evidence),
+       maxCapability(CC) )
+
+   A verifier MUST enforce both bounds; a high-capability boundary does
+   not raise a record above the issuing implementation's Conformance
+   Class.  For example, a record claiming WL4 at a tee boundary with a
+   bound provenance artifact, from a CC3 implementation (maxCapability
+   WL3), is bounded by min(WL4, WL3) = WL3 and is downgraded
+   accordingly.
+
+   Core treats capabilities_ref as an opaque reference.  A verifier
+   resolves it through local configuration or a profile-defined
+   mechanism to an accepted Conformance Class; Core does not define the
+   serialization, discovery, revocation, or trust-anchor model for such
+   capabilities.  If capabilities_ref is absent, unavailable, expired,
+   unverifiable, or not accepted by the verifier's trust configuration,
+   resolution fails and the effective Conformance Class is CC0: the
+   record MAY still be structurally valid, but its verified level is
+   bounded by maxCapability(CC0) = WL0 (fail-closed).  Core
+   interoperability therefore covers structure, signature, and the
+   ladder mechanics; the assignment of a verified level above WL0 is
+   relative to the verifier's trust configuration, in the same way that
+   RATS appraisal is relative to appraisal policy.
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 11]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   *Rationale for the maxCapability(CC) mapping.* The mapping assigns to
+   each Conformance Class the highest Witnessability Level whose claims
+   that class can actually ground; it tracks verifier capability, not
+   witness output.  At CC0 and CC1 no signature is verified, so no
+   runtime claim above observation (WL0) can be grounded.  At CC2 a
+   record's signature is verified against a published key: intent (WL1)
+   and invocation (WL2) claims become groundable, since both are carried
+   in the signed content and differ only in their conditional-required
+   fields (Section 6.1); execution claims are not, because CC2 does not
+   ground the boundary assertion itself.  CC3 adds that grounding -- key
+   identity bound to the declared boundary through attestation or an
+   established trust anchor -- which Section 7.4 sets as the minimum for
+   execution ownership, so maxCapability rises to WL3.  CC4 adds
+   verified composition (Section 8.1), the property that makes a
+   provenance bridge trustworthy across chained records, raising the
+   bound to WL4.  CC5 adds verification of an independent-verification
+   path, the implementation-side counterpart of WL5.  The scale is
+   monotonic non-decreasing by construction, and the combined invariant
+   of Section 7.1 -- which bounds the verified level by both the claim-
+   relative attainable level of the boundary and maxCapability(CC) --
+   ensures that neither a high-ceiling boundary nor a high-capability
+   implementation alone can raise a record's verified level.
+
+5.  Record Model
+
+   A WEXP artifact is composed of the following layers.
+
+   *  *WEXP Core Record.* MUST be present; otherwise the artifact is not
+      a WEXP Record.
+
+   *  *WEXP Profile Binding.* MUST be present inside a specific profile;
+      OPTIONAL in pure-Core records.
+
+   *  *WEXP Top-level Evidence.* Typed blocks: provenance (for WL4),
+      independent-verification / attestation (for WL5), and transparency
+      (orthogonal).  Each is carried as a typed evidence-ref
+      (Section 6.2); Core checks only its presence and syntactic binding
+      to the record, not its internal semantics.  Such evidence is
+      REQUIRED at its claimed WL, and a verifier MUST honor evidence
+      only when carried at the top level.  This evidence MUST NOT be
+      carried inside extensions.
+
+   *  *WEXP Extensions.* An OPTIONAL map of the form { "<registered-
+      name>": { "critical": <bool>, "value": <...> } }. Extensions MAY
+      strengthen explainability.  Extensions MUST NOT raise the WL, and
+      MUST NOT carry WL4 or WL5 evidence.
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 12]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   Profiles MUST NOT redefine Core fields; profiles MAY constrain,
+   extend, or specialize them.  A Core record MUST validate standalone,
+   without a profile.
+
+6.  Core Record Fields
+
+   A WEXP Core Record answers seven questions.  The following fields
+   MUST be present in every Core Record.
+
+        +=====================+===================================+
+        | Question            | Field(s)                          |
+        +=====================+===================================+
+        | What happened?      | event.operation, event.event_type |
+        +---------------------+-----------------------------------+
+        | Who or what acted?  | subject{ agent_id, host_id }      |
+        +---------------------+-----------------------------------+
+        | Where was the       | model.boundary_type               |
+        | witness boundary?   |                                   |
+        +---------------------+-----------------------------------+
+        | What level is       | model.claimed_level (a WL)        |
+        | claimed?            |                                   |
+        +---------------------+-----------------------------------+
+        | Who witnessed, and  | witness{}, seal{}                 |
+        | signed with what?   |                                   |
+        +---------------------+-----------------------------------+
+        | What is disclosed?  | disclosure{}                      |
+        +---------------------+-----------------------------------+
+        | Identity of         | protocol, protocol_version,       |
+        | protocol and record | record_id, created_at             |
+        +---------------------+-----------------------------------+
+
+                                  Table 4
+
+   The record_id is an opaque identifier: uniqueness is the issuing
+   implementation's responsibility, and Core defines no format,
+   namespace, or collision semantics beyond exact-match comparison.
+
+6.1.  Conditional-required fields by claimed level
+
+   The following fields are conditionally required by
+   model.claimed_level.  These requirements are enforced by the verifier
+   when evaluating the claimed level; their absence does not by itself
+   make a Core Record structurally invalid and MUST instead result in a
+   downgrade to the highest level, not exceeding the claim, whose own
+   requirements are met (see Section 8.1 and Section 8.2.1).  The schema
+   validates structure; the verifier validates the claimed level.
+
+   *  *WL1* -- input.arguments_hash MUST be present.
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 13]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   *  *WL2* -- input.arguments_hash MUST be present, and only that
+      (invocation-evidence).  At WL2, policy and timing are OPTIONAL and
+      are not Core-required: policy is orthogonal to WL and is profile-
+      scoped.  A profile MAY require policy for gate-mediated actions.
+
+   *  *WL3* -- execution.{ started_at, ended_at, outcome, result_hash }
+      MUST be present.
+
+   *  *WL4* -- a provenance artifact (see Section 5, Top-level Evidence)
+      MUST be present, in addition to the WL3 requirements.
+
+   *  *WL5* -- an independent-verification path MUST be present, in
+      addition to the WL3 requirements.
+
+   Raw payloads MUST NOT be required by Core; see the Minimal Evidence
+   floor (Section 7).
+
+6.2.  Core Record schema (CDDL)
+
+   The following CDDL ([RFC8610]) is the normative schema for a WEXP
+   Core Record.  A complete worked JSON example, with accept and
+   downgrade verification walkthroughs, will be provided in a subsequent
+   revision.  A Core Record MUST validate against this schema;
+   conditional-required fields by claimed level (Section 6.1) and the
+   honesty invariants (Section 7) are additional constraints the
+   verifier enforces beyond structural validation.
+
+   wexp-core-record = {
+     protocol: tstr,
+     protocol_version: tstr,
+     record_id: tstr,
+     created_at: tdate,
+     event: event-block,
+     subject: subject-block,
+     model: model-block,
+     witness: witness-block,
+     seal: seal-block,
+     disclosure: disclosure-block,
+     ? capabilities_ref: tstr, ; reference to published CC capabilities
+     ? input: input-block,     ; required at WL1 and WL2
+     ? execution: execution-block, ; required at WL3
+     ? evidence: evidence-block,   ; top-level evidence only
+     ? extensions: extensions-map,
+   }
+
+   ; claimed_level encoding (ratified): string form
+   WL = "WL0" / "WL1" / "WL2" / "WL3" / "WL4" / "WL5"
+   ; Comparison semantics (informative): "WLn" maps to integer n for the
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 14]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   ; honesty invariants. The verified level is bounded by
+   ;   min( claimed, attainable(boundary_type, claimed, evidence),
+   ;        maxCapability(CC), recorder_ceiling, chain_min )
+   ; Implementations MUST parse "WLn" as integer n for ordering
+   ; comparisons, then re-encode as string in records.
+
+   ; Hash-alg identifier; "sha-256" is the default. Each hash field
+   ; carries its own algorithm so the record is self-describing.
+   hash-alg = "sha-256" / tstr
+
+   ; All octet strings in JSON serialization (seal.sig, *_hash, digest)
+   ; are encoded as base64url WITHOUT padding.
+
+   event-block = { operation: tstr, event_type: tstr }
+   subject-block = { agent_id: tstr, host_id: tstr }
+   model-block = { boundary_type: tstr, claimed_level: WL }
+
+   ; witness / seal / disclosure internal fields are refined by
+   ; profiles; beyond the mandatory identifiers below they are open
+   ; maps pending field-byte alignment.
+   ; id identifies the witnessing component or system (opaque).
+   witness-block = { id: tstr, * tstr => any }
+   ; alg, sig, and kid are present iff the record is signed (CC2+);
+   ; sig is base64url-encoded, no padding; kid is an opaque
+   ; identifier of the signing key (resolution is out of scope).
+   seal-block = { ? alg: tstr, ? sig: tstr, ? kid: tstr, * tstr => any }
+   disclosure-block = { * tstr => any }
+
+   input-block = {
+     arguments_hash_alg: hash-alg,
+     arguments_hash: tstr,          ; base64url, no padding
+     * tstr => any
+   }
+   execution-block = {
+     started_at: tdate, ended_at: tdate,
+     outcome: tstr,
+     result_hash_alg: hash-alg,
+     result_hash: tstr              ; base64url, no padding
+   }
+
+   ; Top-level typed evidence refs. Core verifies their PRESENCE and
+   ; SYNTACTIC binding (digest + optional bound_record_id);
+   ; it does not validate internal semantics of the referenced artifact.
+   evidence-ref = {
+     type: tstr,
+     digest_alg: hash-alg,
+     digest: tstr,                  ; base64url, no padding
+     ? uri: tstr,
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 15]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+     ? bound_record_id: tstr,
+     * tstr => any
+   }
+   evidence-block = {
+     ; provenance is required for WL4; at WL5 it is optional
+     ; unless a profile or policy requires it
+     ? provenance: evidence-ref,
+     ? independent_verification: evidence-ref, ; required for WL5
+     ? transparency: evidence-ref,             ; orthogonal
+   }
+
+   extensions-map = { * tstr => { critical: bool, value: any } }
+
+   Extensions MUST NOT raise the Witnessability Level and MUST NOT carry
+   WL4 or WL5 evidence (Section 5).
+
+   A top-level evidence artifact is _bound_ to a WEXP record when the
+   record carries an evidence-ref whose digest identifies that artifact
+   and that reference is included in the signed record payload;
+   bound_record_id, when present, is a reverse reference from the
+   artifact to the WEXP record.  Core validates the presence and syntax
+   of this binding; validation of the artifact's internal semantics is
+   profile-specific.
+
+7.  Honesty Invariants (Ceilings)
+
+   Two ceilings and a floor bound what a record may honestly claim.  A
+   verifier MUST enforce the Boundary Ceiling and, when a qualification
+   is asserted, the Recorder Ceiling; the Minimal Evidence floor is a
+   content discipline on the producer.
+
+7.1.  Boundary Ceiling (MUST)
+
+   The Boundary Ceiling separates two mechanisms: the execution-evidence
+   level a boundary directly grounds, and the lift that bound top-level
+   evidence adds on top of it.
+
+   *Base execution level.* Each boundary type grounds a base execution-
+   evidence level, base_execution_level(boundary_type), taken from the
+   WEXP Boundary Types registry (Section 11.1): an intent or approval
+   boundary grounds WL1, an invocation boundary WL2, and an execution-
+   ownership boundary (including a trusted execution environment) WL3.
+   No boundary grounds WL4 or WL5 by itself.
+
+   *Evidence lift.* WL4 and WL5 are reached only by adding a bound top-
+   level evidence artifact to an execution-ownership boundary, and each
+   lift level is satisfied only by the artifact that defines it: a bound
+   provenance artifact satisfies WL4; a bound independent-verification
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 16]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   artifact satisfies WL5; neither satisfies the other's level.
+   Attainability is claim-relative across the whole ladder -- the
+   highest level, not exceeding the claimed level, whose own
+   requirements are met.  For WL1-WL3 the requirements are the boundary
+   base and the conditional-required fields of Section 6.1; for WL4 and
+   WL5 they are an execution-ownership base, the WL3 execution evidence
+   (the level table defines WL4 and WL5 as "WL3 plus" an artifact), and
+   the corresponding bound artifact.  Here evidence denotes both the
+   record's conditional-required fields and its bound top-level
+   artifacts:
+
+   attainable(boundary_type, claimed_level, evidence):
+     base = base_execution_level(boundary_type)
+     best = WL0
+     for n in WL1..WL3:
+       if n <= base and n <= claimed_level and
+          the conditional-required fields for n are present:
+           best = n
+     if base >= WL3 and claimed_level >= WL4 and
+        the WL3 requirements are met and
+        a bound provenance artifact is present:
+         best = WL4
+     if base >= WL3 and claimed_level >= WL5 and
+        the WL3 requirements are met and
+        a bound independent-verification artifact is present:
+         best = WL5
+     return best
+
+   An intent or invocation boundary (base < WL3) cannot reach WL4 or
+   WL5: a provenance or independent-verification artifact attached to a
+   manual-approval or proxy record does not raise it.  WL4 and WL5 are
+   available at host-hook, kernel, tool-runtime, and tee boundaries,
+   each requiring the corresponding bound artifact.
+
+   *Combined invariant.* The verified level MUST NOT exceed any of the
+   claimed level, the boundary-and-evidence attainable level, the
+   implementation Conformance Class capability (Section 4.1.1), the
+   recorder ceiling (Section 7.2), and the composition minimum
+   (Section 8.2):
+
+   verified_level <= min(
+       claimed_level,
+       attainable(boundary_type, claimed_level, evidence),
+       maxCapability(CC),
+       recorder_ceiling,
+       chain_min )
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 17]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   The verifier MUST derive base_execution_level from the boundary-types
+   registry based on the actual boundary_type, and MUST NOT derive it
+   from the implementation's Conformance Class.  A high-capability
+   boundary does not raise a record above the implementation's
+   Conformance Class: an implementation at CC3 (maxCapability WL3)
+   emitting a record at a tee boundary with a bound provenance artifact
+   is still bounded at WL3, since min(WL4, WL3) = WL3.
+
+7.2.  Recorder Ceiling (MUST when asserted)
+
+   Core reserves a recorder-ceiling slot in the verified-level bound
+   (Section 8) but defines no recorder qualifications: the qualification
+   vocabulary, its record fields, and the max_assurance() mapping are
+   profile-defined.  When no profile-defined qualification is asserted,
+   the slot is inactive and does not constrain the record.  When a
+   profile asserts one, the claimed level MUST NOT exceed that profile's
+   maximum assurance:
+
+   claimed_WL <= max_assurance(qualification_profile)
+
+7.3.  Minimal Evidence floor (SHOULD)
+
+   Record content SHOULD be minimal-sufficient for the claimed WL.  Raw
+   payloads are excluded by default (Core never requires them); hashes,
+   commitments, references, summaries, or encrypted material SHOULD be
+   preferred.  Minimality is relative to the claimed WL: verification
+   metadata grows with WL, while the payload does not.
+
+7.4.  Evidence is required, not implied
+
+   WL4 and WL5 require an actual bound evidence artifact, not merely a
+   boundary label: a provenance artifact for WL4, and an independent-
+   verification artifact for WL5.  The boundary_type field is an
+   assertion of the witness.  At CC3 and above the assertion is bound to
+   a verified key identity, which attributes it to a known signer but
+   does not by itself prove the action was observed at the asserted
+   boundary; stronger grounding of the boundary assertion (for example,
+   boundary attestation evidence) is out of scope for Core and left to
+   profiles and future work.  Accordingly, a WEXP record does not prove
+   that the declared boundary matches the actual execution environment.
+
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 18]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+7.4.1.  WL4 attainability
+
+   WL4 is attainable when both hold: (a) the boundary grounds an
+   execution level of at least WL3 (base_execution_level(boundary_type)
+   >= WL3), and (b) a bound top-level provenance artifact is present
+   (see Section 5 and Section 7.1).  WL4 is therefore reachable at any
+   execution-ownership boundary -- host-hook, kernel, tool-runtime, or
+   tee -- not only at tee: it is the bound provenance artifact, not a
+   special boundary, that lifts WL3 execution evidence to WL4.  WL5 is
+   reached analogously, with a bound independent-verification artifact
+   in place of the provenance artifact.  An intent or invocation
+   boundary (base_execution_level < WL3) cannot reach WL4 or WL5
+   regardless of any attached artifact.
+
+8.  Verifier Requirements
+
+   A conforming verifier MUST evaluate a record through the following
+   ladder; the overview below is informative, and the normative order of
+   checks is the pseudocode of Section 8.1.  The procedure is modular:
+   Core, then (if present) Profile, then (if present) Policy.
+
+   structure (schema)
+   -> canonical signing input (JCS for JSON)
+   -> signature (per seal.alg; "Ed25519" MTI for JSON Core)
+   -> key binding
+   -> base execution level (boundary)
+   -> conditional-required + evidence lift (WL4/WL5 artifact)
+   -> Conformance Class capability
+   -> recorder ceiling
+   -> composition-min (chains)
+   -> [profile: action taxonomy, maker-checker, correction]
+   -> [policy: Evidence Contract gate -> ALLOW | DENY | REQUIRE_REVIEW]
+
+   Within this ladder, for the JSON serialization defined by this
+   document, the signing input is the UTF-8 encoding of the JCS
+   [RFC8785] canonical form of the WEXP Core Record with seal.sig
+   absent, so that seal.alg and, when present, seal.kid are part of the
+   signed payload.  The signature is computed and verified according to
+   seal.alg, a string identifier that MUST name a fully specified
+   signature algorithm -- one requiring no external parameters such as
+   an unstated curve or hash.  For this JSON serialization, the value
+   "Ed25519" of seal.alg identifies Ed25519 as specified in [RFC8032]
+   and is mandatory to implement ([RFC7696]); a verifier MAY implement
+   additional profile-defined algorithms.  Additional values of seal.alg
+   MUST be introduced by a WEXP serialization or cryptographic profile
+   that specifies the algorithm identifier namespace and the exact
+   verification procedure; such profiles SHOULD reuse registered JOSE or
+   COSE algorithm identifiers, including post-quantum signature
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 19]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   algorithms, rather than minting WEXP-specific algorithm names.  This
+   document defines no algorithm registry of its own.  Algorithms that
+   are unsupported, unrecognized, or disallowed by the verifier's trust
+   configuration fail closed (E_UNSUPPORTED_ALGORITHM).
+   Canonicalization is a property of the serialization: JCS applies to
+   this JSON serialization, and profiles defining other envelopes (for
+   example, COSE) define their own canonical signing input.  After
+   signature computation, seal.sig is inserted as a base64url-encoded
+   octet string without padding.  All octet strings in the JSON
+   serialization -- seal.sig, input.arguments_hash,
+   execution.result_hash, and any evidence digest -- MUST be base64url-
+   encoded without padding.  If seal.sig is present and seal.alg is
+   absent, unsupported, or unrecognized, the record is rejected
+   (E_UNSUPPORTED_ALGORITHM); if seal.sig is absent, the record is not
+   rejected on that basis and is evaluated at most as CC1 for that
+   record (Section 8.1).  An unsupported or unrecognized hash algorithm
+   likewise fails closed: if the algorithm of a conditional-required
+   hash (input.arguments_hash_alg, execution.result_hash_alg) or of an
+   evidence digest_alg is unsupported, the affected field or artifact is
+   not honored and the verified level is computed as if it were absent
+   (Section 8.2.1).  The key-binding step resolves seal.kid to a
+   verified key identity; the resolution mechanism (a local key store or
+   profile-defined discovery) is out of scope for Core.
+
+8.1.  Verifier result and verdict
+
+   A verifier computes a verified_level and emits a verdict:
+
+   claimed_level  = model.claimed_level
+   verified_level = level supported by structure, signature,
+                  key binding, base execution level, present
+                  bound evidence, Conformance Class capability,
+                  recorder ceiling, and chain minimum
+   verdict:
+     reject    if the record cannot be safely interpreted or trusted
+     accept    if verified_level == claimed_level
+     downgrade if verified_level <  claimed_level and the record remains
+               safely interpretable
+
+   The schema validates structure; the verifier validates the claimed
+   level.  A missing or unbound top-level evidence artifact required by
+   the claimed level does not by itself cause rejection; it lowers
+   verified_level and yields downgrade (Section 8.2.1).  A verifier
+   result SHOULD carry verdict, claimed_level, verified_level,
+   downgrade_reason (zero or more error-code tokens), and errors (zero
+   or more error-code tokens), with tokens drawn from Section 11.2.
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 20]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   The following pseudocode is normative for the order of checks and for
+   the accept/downgrade/reject outcome; it does not mandate a code
+   structure:
+
+   if structure invalid:             reject(E_INVALID_SCHEMA)
+   if unknown critical extension:  reject(E_UNKNOWN_CRITICAL_EXTENSION)
+   if canonicalization fails:        reject(E_CANONICALIZATION_FAILED)
+   if timestamp invalid:             reject(E_TIMESTAMP_INVALID)
+   if boundary_type unregistered:    reject(E_UNKNOWN_BOUNDARY_TYPE)
+
+   ; signature: absence is not an error (it caps the effective CC
+   ; for this record); a present-but-invalid signature is rejected.
+   if seal.sig present:
+       if seal.alg absent/unsupported: reject(E_UNSUPPORTED_ALGORITHM)
+       if signature invalid:              reject(E_INVALID_SIGNATURE)
+       if key binding fails:              reject(E_KEY_BINDING_FAILED)
+       signed = true
+   else:
+       signed = false
+
+   cc = resolve(capabilities_ref)        ; implementation-scoped CC
+   if cc unresolved or not accepted: cc = CC0  ; E_MISSING_CAPABILITIES
+   ; a record without a valid signature is evaluated at most as
+   ; CC1 (this record only)
+   effective_cc = cc if signed else min(cc, CC1)
+
+   base = min( claimed_level,
+               attainable(boundary_type, claimed_level, evidence),
+               maxCapability(effective_cc) )
+   if recorder qualification asserted:
+       base = min( base, max_assurance(qualification_profile) )
+   verified_level = base
+   if a chain is supplied:
+       verified_level = min( verified_level,
+                          min over segments( segment.verified_level ) )
+
+   if verified_level == claimed_level: accept
+   else:                               downgrade
+
+   Here attainable(boundary_type, claimed_level, evidence) is the claim-
+   relative bound of Section 7.1: the highest level, not exceeding the
+   claimed level, whose own evidence requirements are met -- WL4 only by
+   a bound provenance artifact, WL5 only by a bound independent-
+   verification artifact.
+
+   A timestamp is invalid when created_at, or any execution timestamp
+   present, is not a syntactically valid tdate per the schema
+   (Section 6.2), or when execution.ended_at precedes
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 21]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   execution.started_at.  Freshness, skew tolerance, and validity
+   windows are policy concerns, not Core: Core takes no position on how
+   old a record may be.
+
+   A record without a valid seal.sig is not rejected on that basis
+   alone; for that record the effective Conformance Class is at most CC1
+   (maxCapability WL0), since a valid signature is a property of CC2 and
+   above (Section 4.1).  This is deliberate: an unsigned record can be
+   structurally valid, but nothing binds its content to a producer, so
+   it grounds no execution-evidence claim.  A seal.sig that is present
+   but cryptographically invalid, or present with an absent or
+   unsupported seal.alg, or present without seal.kid, is rejected.
+
+8.2.  Composition
+
+   For a chain of segments, the verified level is the minimum over
+   segments:
+
+   Level(chain) = min over segments( verified_level )
+
+   Aggregation MUST NOT inflate the level: a chain MUST NOT be assigned
+   a level higher than the lowest level any of its segments supports.
+
+8.2.1.  Downgrade target for missing required evidence
+
+   At the conditional-required + evidence-lift step (Section 8), if any
+   evidence required by the claimed level -- a conditional-required
+   field (Section 6.1) or a bound top-level artifact -- is absent, the
+   verifier MUST NOT reject solely on that basis; it MUST instead
+   downgrade the verified level to the highest level, not exceeding the
+   claimed level, whose own evidence requirements are met (the claim-
+   relative attainable level of Section 7.1):
+
+   *  claimed WL5, a provenance artifact present but no independent-
+      verification path -> WL4;
+
+   *  claimed WL4 or WL5 with neither artifact -> the level grounded by
+      the boundary alone;
+
+   *  claimed WL4 with an independent-verification path but no
+      provenance artifact -> the level grounded by the boundary alone:
+      an independent-verification artifact satisfies WL5, not WL4, and a
+      level above the claim is never assigned.
+
+   The same rule applies below the lift levels: a claimed WL1-WL3 whose
+   conditional-required fields (Section 6.1) are absent is downgraded to
+   the highest level, not exceeding the claim, whose requirements are
+   met; a field or artifact whose hash algorithm is unsupported is
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 22]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   treated as absent for this purpose (Section 8).  For example, a
+   record claiming WL3 at an execution-ownership boundary with no
+   execution block is downgraded to WL2 when input.arguments_hash is
+   present, and to WL0 when it is not.
+
+   When neither artifact is present, the floor is at most the boundary's
+   base execution level (Section 7.1), provided the corresponding
+   conditional-required fields (Section 6.1) are present: WL1 for an
+   intent or approval boundary, WL2 for an invocation boundary, and WL3
+   for an execution-ownership boundary (host-hook, kernel, tool-runtime,
+   tee).  For example, a tee record claiming WL5, whose independent-
+   verification artifact is absent or unbound and which carries no
+   provenance artifact, is downgraded to WL3: the attestation grounds
+   execution ownership (WL3) but, absent a bound independent-
+   verification artifact, does not support WL5.  A level downgraded in
+   this way propagates through composition under the non-inflation rule
+   (Section 8.2): a chain is never assigned a level higher than the
+   lowest its segments support.
+
+8.3.  Safe failure
+
+   Unknown fields or extensions marked critical: true MUST fail closed,
+   with error E_UNKNOWN_CRITICAL_EXTENSION.  Unknown non-critical
+   extensions MAY be ignored.  A verifier MUST NOT accept unknown
+   critical content partially, heuristically, or as non-critical
+   content.
+
+9.  Implementation Status
+
+   This section records the implementation status of WEXP, in the spirit
+   of [RFC7942].  It is informational and is to be removed before
+   publication as an RFC.
+
+   The reference implementation of WEXP is being developed by WitSeal: a
+   witnessed-execution runtime implemented in TypeScript.  The runtime
+   today produces signed, hash-chained execution receipts in its v0.2
+   lineage format (policy-decision capture, approval state, artifact and
+   result digests); these receipts are a compatibility lineage, not WEXP
+   Core Records.  A WEXP-conformant Core Record emitter and an offline
+   verifier implementing the ladder of Section 8 are the next
+   implementation milestone, tracked against this document.
+
+   A prospective design-partner deployment is evaluating WEXP across the
+   WL0-WL3 boundaries.  Implementation status is informational and does
+   not affect the specification's standing.
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 23]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+10.  Security Considerations
+
+   WEXP grades the _strength_ of evidence about execution.  It does not
+   certify the correctness, safety, or alignment of the action.
+   Implementers and relying parties MUST NOT treat a WEXP record as more
+   than an execution-evidence claim at its stated level.  In particular:
+
+   *  *Provenance is not runtime.* A provenance artifact establishes
+      origin/build, not that a specific runtime action occurred.
+      Conflating the two is the error E_PROVENANCE_RUNTIME_CONFUSION;
+      this code belongs to the policy layer -- it names a relying-party
+      interpretation error, is not emitted by the Core verifier ladder,
+      and its registered default handling is policy.
+
+   *  *Attestation is not semantic correctness.* Remote attestation can
+      establish environment identity/integrity, not that the executed
+      action was correct.
+
+   *  *A hash is not payload truth.* A hash-only payload proves
+      integrity of a referenced object, not the truth of its contents.
+
+   *  *Boundary assertion.* As stated in Section 7.4, a record does not
+      prove that the declared boundary matches the actual execution
+      environment; this is grounded externally (CC3+/attestation), not
+      by the record.
+
+   These non-claims are normative limits on interpretation, not optional
+   caveats.
+
+   Consistent with [AUDIT-ARCH], WEXP does not address an adversarial
+   executor that refuses to produce a record at its boundary, operator
+   collusion across all roles, or model alignment.  Under WEXP these do
+   not yield a positive claim: missing or unobtainable evidence produces
+   a downgraded or rejected verdict, never an inflated one.  A
+   transparency-log receipt establishes existence and content at
+   registration, not the truth of the underlying claim; a self-asserted
+   record does not establish that user intent was satisfied; a complete
+   trace does not establish that authorization was valid.  In
+   particular, a transparency receipt alone does not constitute the
+   independent-verification artifact required for WL5: a transparency
+   log MAY carry or timestamp such an artifact, but WL5 requires an
+   independent verification of the execution-evidence claim itself
+   (Section 7.1).  WEXP forbids these inferences (non-inflation).
+
+   Independent custody of a record (for example, third-party
+   countersigning or transparency-log registration) and independent
+   observation of an executed effect (for example, attestation by a
+   receiving counterparty) strengthen evidence in different ways: the
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 24]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   former makes the record's custody independent while its content
+   remains as originated; the latter corroborates the observed effect
+   itself.  Both are graded, like all other evidence, under the honesty
+   invariants above and never inflate a claim.
+
+   A note on privacy and selective disclosure.  WEXP references
+   execution content by hash: input.arguments_hash and result
+   commitments pin claims to specific payloads without storing them (the
+   Minimal Evidence floor).  Verification of integrity and claim
+   strength therefore proceeds on hashes and record structure alone, and
+   deployments may keep content fields opaque across administrative or
+   domain boundaries.  Profiles may add selective-disclosure mechanisms;
+   Core neither requires nor precludes them.  Hashes and digests are
+   integrity commitments, not confidentiality mechanisms; low-entropy or
+   guessable payloads may be vulnerable to dictionary or correlation
+   attacks.  Privacy-sensitive profiles SHOULD use salted commitments,
+   keyed commitments, encryption, or selective disclosure.
+
+   A note on algorithm migration and long-lived evidence.  The signature
+   algorithm lies on the authenticity axis (Conformance Class), not the
+   witnessability axis: a stronger algorithm does not raise WL, and non-
+   inflation holds.  The relevant quantum-era threat to signed records
+   is not retrospective decryption but future forgery: records signed
+   with a classical algorithm remain verifiable, but once that algorithm
+   is broken an adversary can forge new records, including backdated
+   ones.  Durable evidentiary force therefore comes from contemporaneous
+   anchoring -- a transparency registration or an independent
+   countersignature fixed while the algorithm is unbroken (see the
+   custody discussion above) -- and from algorithm migration via
+   seal.alg and profiles, not from any single algorithm choice made
+   today.
+
+11.  IANA Considerations
+
+   This document defines registries for WEXP boundary types, error
+   codes, and WEXP profiles.  This revision specifies the WEXP Boundary
+   Types registry and seeds the WEXP Error Codes registry; the WEXP
+   Profiles registry is reserved here and specified in a subsequent
+   revision.  This document does not request a Conformance Classes
+   registry: the classes CC0-CC5 are defined by this document
+   (Section 4.1).  All registries in this section use the Specification
+   Required [RFC8126] registration policy.
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 25]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+11.1.  WEXP Boundary Types
+
+   IANA is requested to create the WEXP Boundary Types registry.  Each
+   entry has a Boundary Type identifier, an Execution Level (the base
+   execution-evidence level the boundary grounds, used as
+   base_execution_level(boundary_type) in the Boundary Ceiling invariant
+   of Section 7.1), and a description of the control surface the
+   boundary observes.  The Execution Level is a base level, not a grant
+   of the maximum claim: WL4 and WL5 are reached only by adding a bound
+   top-level provenance or independent-verification artifact
+   (Section 7.1, Section 7.4.1).  The registry is initialized with the
+   following values:
+
+     +=================+===========+=================================+
+     | Boundary Type   | Execution | Description                     |
+     |                 | Level     |                                 |
+     +=================+===========+=================================+
+     | manual-approval | WL1       | Recorded human approval,        |
+     |                 |           | captured out of band; witnesses |
+     |                 |           | intent or authorization, not    |
+     |                 |           | invocation or execution.        |
+     +-----------------+-----------+---------------------------------+
+     | proxy           | WL2       | Interposed invocation mediator  |
+     |                 |           | (e.g. API or tool proxy);       |
+     |                 |           | witnesses that a call crossed   |
+     |                 |           | the boundary, not execution     |
+     |                 |           | outcome.                        |
+     +-----------------+-----------+---------------------------------+
+     | workflow        | WL2       | Workflow or orchestration       |
+     |                 |           | engine recording step           |
+     |                 |           | transitions; witnesses          |
+     |                 |           | invocation and ordering, not    |
+     |                 |           | in-process execution.           |
+     |                 |           | Activity-owned execution should |
+     |                 |           | use host-hook or tool-runtime   |
+     |                 |           | as appropriate.                 |
+     +-----------------+-----------+---------------------------------+
+     | host-hook       | WL3       | In-host instrumentation         |
+     |                 |           | (runtime, ABI, or syscall       |
+     |                 |           | hook); witnesses execution      |
+     |                 |           | start, outcome, and result      |
+     |                 |           | commitment.  A bound provenance |
+     |                 |           | artifact lifts to WL4; a bound  |
+     |                 |           | independent-verification        |
+     |                 |           | artifact lifts to WL5.          |
+     +-----------------+-----------+---------------------------------+
+     | kernel          | WL3       | Kernel-level mediation at the   |
+     |                 |           | OS boundary; witnesses          |
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 26]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+     |                 |           | execution.  A bound provenance  |
+     |                 |           | artifact lifts to WL4; a bound  |
+     |                 |           | independent-verification        |
+     |                 |           | artifact lifts to WL5.          |
+     +-----------------+-----------+---------------------------------+
+     | tool-runtime    | WL3       | Tool or agent runtime           |
+     |                 |           | performing the action in        |
+     |                 |           | process; records execution      |
+     |                 |           | directly.  A bound provenance   |
+     |                 |           | artifact lifts to WL4; a bound  |
+     |                 |           | independent-verification        |
+     |                 |           | artifact lifts to WL5.          |
+     +-----------------+-----------+---------------------------------+
+     | tee             | WL3       | Trusted execution environment   |
+     |                 |           | owning execution; grounds WL3.  |
+     |                 |           | Its attestation MAY contribute  |
+     |                 |           | to a bound independent-         |
+     |                 |           | verification artifact lifting   |
+     |                 |           | to WL5 (and a bound provenance  |
+     |                 |           | artifact lifts to WL4) when     |
+     |                 |           | profile-defined, independently  |
+     |                 |           | appraised, present, and bound.  |
+     +-----------------+-----------+---------------------------------+
+
+                                  Table 5
+
+   The Execution Level is the base level a boundary grounds, not a grant
+   of the maximum claim.  By Section 6.1 and Section 7.4, a WL4 claim
+   still requires a bound provenance artifact and a WL5 claim a bound
+   independent-verification artifact, each carried as top-level
+   evidence.  WL4 and WL5 are therefore reachable at any execution-
+   ownership boundary (host-hook, kernel, tool-runtime, tee) when the
+   corresponding artifact is present and bound; a tee attestation is one
+   source of the WL5 independent-verification artifact, not a privileged
+   path.  Where the required artifact is absent or not bound to the
+   record, a verifier downgrades or rejects the record (Section 8,
+   Section 7.4) rather than honoring a nominal level.  A boundary label
+   by itself never raises the claimable level above the base execution
+   level.
+
+11.2.  WEXP Error Codes
+
+   IANA is requested to create the WEXP Error Codes registry, with the
+   Specification Required [RFC8126] policy.  Each entry has an error-
+   code token, a default handling disposition (reject, downgrade, or
+   policy), and a reference to its defining specification.  The default
+   handling indicates how a conforming verifier treats the condition
+   absent an overriding profile or policy (Section 8.1).  This revision
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 27]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   registers the error codes used normatively in this document:
+
+     +================================+===========+=================+
+     | Error Code                     | Default   | Reference       |
+     |                                | handling  |                 |
+     +================================+===========+=================+
+     | E_INVALID_SCHEMA               | reject    | Section 8.1     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_CANONICALIZATION_FAILED      | reject    | Section 8.1     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_UNSUPPORTED_ALGORITHM        | reject    | Section 8.1     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_INVALID_SIGNATURE            | reject    | Section 8.1     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_KEY_BINDING_FAILED           | reject    | Section 8.1     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_TIMESTAMP_INVALID            | reject    | Section 8.1     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_UNKNOWN_BOUNDARY_TYPE        | reject    | Section 11.1    |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_MISSING_CAPABILITIES         | downgrade | Section 4.1.1   |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_CAPABILITY_BELOW_CLAIM       | downgrade | Section 4.1.1   |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_BOUNDARY_CEILING_EXCEEDED    | downgrade | Section 7.1     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_MISSING_REQUIRED_EVIDENCE    | downgrade | Section 8.2.1   |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_EVIDENCE_NOT_BOUND           | downgrade | Section 7.4     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_RECORDER_CEILING_EXCEEDED    | downgrade | Section 7.2     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_CHAIN_INFLATION              | downgrade | Section 8.2     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 28]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+     | E_UNKNOWN_CRITICAL_EXTENSION   | reject    | Section 8.3     |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+     | E_PROVENANCE_RUNTIME_CONFUSION | policy    | Section 10      |
+     |                                |           | (this document) |
+     +--------------------------------+-----------+-----------------+
+
+                                 Table 6
+
+11.3.  WEXP Profiles (reserved)
+
+   The WEXP Profiles registry is reserved by this document and will be
+   specified in a subsequent revision under the Specification Required
+   [RFC8126] policy.  The Conformance Classes CC0-CC5 are defined
+   normatively in Section 4.1; this document does not request an IANA
+   registry for them.  No values are registered here.
+
+   Unknown registered values MUST be handled deterministically.
+   Profiles MUST NOT introduce unregistered boundary types without a
+   corresponding registry update.
+
+12.  References
+
+12.1.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC8032]  Josefsson, S. and I. Liusvaara, "Edwards-Curve Digital
+              Signature Algorithm (EdDSA)", RFC 8032,
+              DOI 10.17487/RFC8032, January 2017,
+              <https://www.rfc-editor.org/rfc/rfc8032>.
+
+   [RFC8126]  Cotton, M., Leiba, B., and T. Narten, "Guidelines for
+              Writing an IANA Considerations Section in RFCs", BCP 26,
+              RFC 8126, DOI 10.17487/RFC8126, June 2017,
+              <https://www.rfc-editor.org/rfc/rfc8126>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 29]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   [RFC8610]  Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
+              Definition Language (CDDL): A Notational Convention to
+              Express Concise Binary Object Representation (CBOR) and
+              JSON Data Structures", RFC 8610, DOI 10.17487/RFC8610,
+              June 2019, <https://www.rfc-editor.org/rfc/rfc8610>.
+
+   [RFC8785]  Rundgren, A., Jordan, B., and S. Erdtman, "JSON
+              Canonicalization Scheme (JCS)", RFC 8785,
+              DOI 10.17487/RFC8785, June 2020,
+              <https://www.rfc-editor.org/rfc/rfc8785>.
+
+12.2.  Informative References
+
+   [ACTA-RECEIPTS]
+              Farley, T., "Signed Decision Receipts for Machine-to-
+              Machine Access Control", Work in Progress, Internet-Draft,
+              draft-farley-acta-signed-receipts-02, 28 June 2026,
+              <https://datatracker.ietf.org/doc/html/draft-farley-acta-
+              signed-receipts-02>.
+
+   [AGENT-AUDIT-TRAIL]
+              Sharif, R., "Agent Audit Trail: A Standard Logging Format
+              for Autonomous AI Systems", Work in Progress, Internet-
+              Draft, draft-sharif-agent-audit-trail-00, March 2026,
+              <https://datatracker.ietf.org/doc/html/draft-sharif-agent-
+              audit-trail-00>.
+
+   [AR4SI]    Voit, E., Birkholz, H., Hardjono, T., Fossati, T., and V.
+              Scarlata, "Attestation Results for Secure Interactions",
+              Work in Progress, Internet-Draft, draft-ietf-rats-ar4si-
+              10, 18 May 2026, <https://datatracker.ietf.org/doc/html/
+              draft-ietf-rats-ar4si-10>.
+
+   [ASQAV-COMPLIANCE]
+              Marques, J. A. G., "Compliance Profile of Signed Action
+              Receipts for AI Agents", Work in Progress, Internet-Draft,
+              draft-marques-asqav-compliance-receipts-06, 1 July 2026,
+              <https://datatracker.ietf.org/doc/html/draft-marques-
+              asqav-compliance-receipts-06>.
+
+   [AUDIT-ARCH]
+              Kuehlewind, M. and H. Birkholz, "An Architecture for
+              Auditing AI Agent Delegation and Interactions", Work in
+              Progress, Internet-Draft, draft-kuehlewind-audit-
+              architecture-00, May 2026,
+              <https://datatracker.ietf.org/doc/html/draft-kuehlewind-
+              audit-architecture-00>.
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 30]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   [DRP]      Nelson, R., "Delegation Receipt Protocol for AI Agent
+              Authorization", Work in Progress, Internet-Draft, draft-
+              nelson-agent-delegation-receipts-10, 13 June 2026,
+              <https://datatracker.ietf.org/doc/html/draft-nelson-agent-
+              delegation-receipts-10>.
+
+   [POB]      Dembowski, J., "Proof-of-Behavior Protocol for Autonomous
+              AI Agents", Work in Progress, Internet-Draft, draft-
+              dembowski-agentledger-proof-of-behavior-00, 20 April 2026,
+              <https://datatracker.ietf.org/doc/html/draft-dembowski-
+              agentledger-proof-of-behavior-00>.
+
+   [RFC7696]  Housley, R., "Guidelines for Cryptographic Algorithm
+              Agility and Selecting Mandatory-to-Implement Algorithms",
+              BCP 201, RFC 7696, DOI 10.17487/RFC7696, November 2015,
+              <https://www.rfc-editor.org/rfc/rfc7696>.
+
+   [RFC7942]  Sheffer, Y. and A. Farrel, "Improving Awareness of Running
+              Code: The Implementation Status Section", BCP 205,
+              RFC 7942, DOI 10.17487/RFC7942, July 2016,
+              <https://www.rfc-editor.org/rfc/rfc7942>.
+
+   [RFC9334]  Birkholz, H., Thaler, D., Richardson, M., Smith, N., and
+              W. Pan, "Remote ATtestation procedureS (RATS)
+              Architecture", RFC 9334, DOI 10.17487/RFC9334, January
+              2023, <https://www.rfc-editor.org/rfc/rfc9334>.
+
+   [SCITT]    Birkholz, H., Delignat-Lavaud, A., Fournet, C., Deshpande,
+              Y., and S. Lasker, "An Architecture for Trustworthy and
+              Transparent Digital Supply Chains", RFC 9943,
+              DOI 10.17487/RFC9943, June 2026,
+              <https://www.rfc-editor.org/rfc/rfc9943>.
+
+   [SLSA]     "Supply-chain Levels for Software Artifacts (SLSA)",
+              <https://slsa.dev>.
+
+   [VAC]      Birkholz, H., Heldt, T., and O. Steele, "Verifiable Agent
+              Conversation Records", Work in Progress, Internet-Draft,
+              draft-birkholz-verifiable-agent-conversations-00, 25
+              February 2026, <https://datatracker.ietf.org/doc/html/
+              draft-birkholz-verifiable-agent-conversations-00>.
+
+   [VAP-LAP]  Yamakawa, A., "Verifiable AI Provenance (VAP) Framework
+              and Legal AI Profile (LAP)", Work in Progress, Internet-
+              Draft, draft-ailex-vap-legal-ai-provenance-03, March 2026,
+              <https://datatracker.ietf.org/doc/html/draft-ailex-vap-
+              legal-ai-provenance-03>.
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 31]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   [VERIFICATION-STATE]
+              Krausz, J., "The verification.* Constraint Family: Pre-
+              Action Fail-Closed Gates for AI Agent Decisions", Work in
+              Progress, Internet-Draft, draft-krausz-verification-state-
+              01, 12 June 2026, <https://datatracker.ietf.org/doc/html/
+              draft-krausz-verification-state-01>.
+
+   [WIMSE]    "WIMSE Workload Credentials", Work in Progress, Internet-
+              Draft, draft-ietf-wimse-workload-creds-02, July 2026,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-wimse-
+              workload-creds-02>.
+
+   [WITNESSABILITY]
+              Sergeev, M. A. and V. Ikher, "Toward a Witnessability
+              Model for AI and Software Execution Systems: A Boundary-
+              Based Framework for Classifying Execution Evidence",
+              SSRN Abstract 6994720, 2026,
+              <https://ssrn.com/abstract=6994720>.  Deposited with SSRN;
+              public posting pending at the time of this draft.
+
+Appendix A.  SCITT Mapping (WL4-WL5)
+
+   This appendix is informative.  WEXP is complementary to supply-chain
+   transparency efforts.  It maps WEXP WL4-WL5 evidence to SCITT [SCITT]
+   vocabulary, so that a WEXP provenance artifact (WL4) and an
+   independent-verification path (WL5) can be expressed against, or
+   cross-checked with, a SCITT transparency service.  WEXP remains a
+   meta-layer over such services: it classifies what their receipts can
+   honestly claim, rather than competing with them.  Detailed field-
+   level mapping will be provided in a subsequent revision.
+
+Appendix B.  Mapping to the AI Agent Audit Architecture
+
+   This appendix is informative.  WEXP relates to the proposed work
+   items of [AUDIT-ARCH] in two distinct modes.  At the contribution
+   points WEXP supplies semantics the architecture does not define; at
+   the composition points WEXP consumes an existing substrate without
+   adding core semantics.  WEXP does not redefine identity, attestation,
+   transparency, or context-propagation substrates.
+
+
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 32]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+B.1.  Contribution points (WEXP supplies what the data models do not
+      define)
+
+   WI-1 (Audit Data Models and Semantics): WEXP contributes the
+   evidential-status semantics absent from the record structure -- the
+   boundary-derived claim ceiling (verified_level <=
+   attainable(boundary_type, claimed_level, evidence)), the verifier
+   verdict of accept, reject, or downgrade, non-inflation under
+   composition, and fail-closed handling of unknown-critical content.
+   WEXP is a semantic layer for WI-1, not a competing data model.
+
+   WI-4 (Action Record Profile): WEXP contributes a claimed_level bound
+   to the boundary_type at which the action took effect, so that an
+   Action Record produced "at the boundary" cannot claim more than that
+   boundary can honestly witness.  Placement (WI-4's concern) and claim
+   strength (WEXP's contribution) are distinct.
+
+B.2.  Composition points (WEXP consumes an existing substrate; no core
+      semantics added)
+
+   WI-6 (Profile of RATS Evidence): WEXP consumes RATS [RFC9334]
+   Evidence and Attestation Results as environmental evidence inputs.
+   RATS is not required by WEXP Core; profiles MAY use attestation
+   evidence to ground a higher published Conformance Class, which Core
+   still resolves only through capabilities_ref (Section 4.1.1).  WEXP
+   adds no attestation semantics of its own here.
+
+   WI-7 (Profile of SCITT Transparency): WEXP treats a SCITT [SCITT]
+   receipt as custody/existence evidence -- it establishes existence and
+   content at registration, not the truth of the underlying claim.  A
+   WEXP record MAY be carried as a SCITT-registered payload or a
+   receipt-bound artifact.  WEXP defines no transparency service.
+
+   WI-11 (Audit Context Propagation): WEXP uses audit trace, parent, and
+   delegation-chain references as context bindings only.  Correlation is
+   not proof of authorization; WEXP does not treat propagated context as
+   a positive claim.
+
+B.3.  Record/role mapping
+
+     +======================+========================+==============+
+     | AUDIT Architecture   | WEXP role              | Mode         |
+     | record/role          |                        |              |
+     +======================+========================+==============+
+     | Interaction Record   | evidence input         | input        |
+     |                      | (interaction-scoped)   |              |
+     +----------------------+------------------------+--------------+
+     | Action Record        | boundary-observation   | contribution |
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 33]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+     | (boundary of effect) | evidence; boundary     | (WI-4)       |
+     |                      | sets ceiling           |              |
+     +----------------------+------------------------+--------------+
+     | Delegation Record    | authority-chain        | input        |
+     |                      | evidence (correlation, |              |
+     |                      | not proof)             |              |
+     +----------------------+------------------------+--------------+
+     | Authorization        | temporal-authorization | input        |
+     | Transition Record    | evidence               |              |
+     +----------------------+------------------------+--------------+
+     | Audit Context        | context binding --     | composition  |
+     | (trace/parent/OBO)   | correlation, not proof | (WI-11)      |
+     +----------------------+------------------------+--------------+
+     | RATS Evidence /      | environmental evidence | composition  |
+     | Attestation Result   | input (not required by | (WI-6)       |
+     |                      | Core)                  |              |
+     +----------------------+------------------------+--------------+
+     | SCITT Receipt        | custody/existence      | composition  |
+     |                      | evidence (not truth-   | (WI-7)       |
+     |                      | of-claim)              |              |
+     +----------------------+------------------------+--------------+
+     | Auditor              | verifier (accept /     | contribution |
+     |                      | reject / downgrade)    | (WI-1)       |
+     +----------------------+------------------------+--------------+
+     | verification result  | portable bounded-claim | output       |
+     |                      | execution receipt      |              |
+     +----------------------+------------------------+--------------+
+
+                                 Table 7
+
+Appendix C.  Design Rationale (non-normative)
+
+   This appendix preserves internal design-record provenance for the
+   frozen Core decisions.  These records are non-normative and do not
+   alter the requirements above.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 34]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+   +===========+=======================================================+
+   | Frozen    | Non-normative rationale preserved here                |
+   | Core      |                                                       |
+   | rationale |                                                       |
+   | marker    |                                                       |
+   +===========+=======================================================+
+   | WEXP-R-01 | Criticality, reversibility, operational domain,       |
+   |           | and custody are not WEXP axes.  They may              |
+   |           | influence policy or profile requirements, but         |
+   |           | they are not witnessability levels.                   |
+   +-----------+-------------------------------------------------------+
+   | WEXP-R-02 | Policy is orthogonal to Witnessability Level and      |
+   |           | is profile-scoped.  At WL2, policy and timing         |
+   |           | are optional and are not Core-required.               |
+   +-----------+-------------------------------------------------------+
+   | WEXP-R-03 | Conformance Class is not a per-record self-           |
+   |           | claim; it is reachable only by reference, for         |
+   |           | example through capabilities_ref.                     |
+   +-----------+-------------------------------------------------------+
+   | WEXP-R-04 | A Core record validates standalone, without a         |
+   |           | profile.                                              |
+   +-----------+-------------------------------------------------------+
+   | WEXP-R-05 | WL4 and WL5 evidence is honored only when             |
+   |           | carried as top-level evidence; it is never            |
+   |           | carried in extensions.                                |
+   +-----------+-------------------------------------------------------+
+   | WEXP-R-06 | WL2 requires input.arguments_hash only as             |
+   |           | invocation evidence.  Policy and timing remain        |
+   |           | optional at Core level.                               |
+   +-----------+-------------------------------------------------------+
+   | WEXP-R-07 | WL1 (Intent) requires input.arguments_hash so         |
+   |           | the intent claim is bound to specific arguments.      |
+   |           | Without this commitment an Intent claim would be      |
+   |           | a bare, non-falsifiable self-assertion, since         |
+   |           | arguments could be substituted later against the      |
+   |           | same record; the hash pins the claimed intent         |
+   |           | without storing the raw payload (Minimal              |
+   |           | Evidence floor).  At WL2 the same hash                |
+   |           | additionally serves as invocation evidence.           |
+   +-----------+-------------------------------------------------------+
+
+                                  Table 8
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 35]
+
+Internet-Draft                  WEXP Core                      July 2026
+
+
+Appendix D.  Disclosure
+
+   One author, Mikhail Sergeev, has a commercial interest in execution-
+   evidence and runtime-assurance tooling.  WitSeal is the reference
+   implementation of WEXP.  This specification presents a vendor-neutral
+   open protocol and does not describe, evaluate, or endorse any
+   specific proprietary implementation.
+
+Authors' Addresses
+
+   Mikhail Sergeev (editor)
+   Independent Researcher
+   Email: mikhailsergeev369@gmail.com
+
+
+   Vladimir Ikher
+   Independent Researcher
+   Email: ikherva@gmail.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher          Expires 6 January 2027                [Page 36]

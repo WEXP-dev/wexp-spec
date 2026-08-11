@@ -1,0 +1,97 @@
+{
+  "artifact_kind": "wexp-public-genesis",
+  "created_at": "2026-08-11T19:00:54Z",
+  "genesis_kind": "authorized-public-state",
+  "manifest_version": 1,
+  "non_claims": [
+    "This public genesis does not assert that the included artifacts were originally created or published at the time of this Git root commit.",
+    "This manifest is not a release, independent conformance result, or IETF acceptance record.",
+    "GitHub public genesis does not replace or redefine the original IETF publication event."
+  ],
+  "payload": {
+    "file_count": 11,
+    "inventory": [
+      {
+        "mode": "100644",
+        "path": ".github/workflows/verify-publication.yml",
+        "sha256": "b6339ef2f9274588e90b606f80f84c5e9825df1324188784e3c8e7481719877e",
+        "size": 523
+      },
+      {
+        "mode": "100644",
+        "path": ".gitignore",
+        "sha256": "c6f542ceab250e78e3e6e38a5554c8406c9dec4fc58f8b0143fce01a6a349373",
+        "size": 24
+      },
+      {
+        "mode": "100644",
+        "path": "CONTRIBUTING.md",
+        "sha256": "f39f93ecf81649ab8f90387e4c890fdf062c560545ce2c037eade8d132ac105f",
+        "size": 1469
+      },
+      {
+        "mode": "100644",
+        "path": "LICENSES/IETF-TRUST.md",
+        "sha256": "fc9546cd61b6cafacd61c6d2f1d32c4a29282f350c04d1620f475b961f9268d4",
+        "size": 1138
+      },
+      {
+        "mode": "100644",
+        "path": "README.md",
+        "sha256": "850bbf3bd29910b1611cfde30d405e8a69ed95c4547690de41ea0197a08d3c22",
+        "size": 2094
+      },
+      {
+        "mode": "100644",
+        "path": "drafts/core/00/draft-sergeev-wexp-core-00.html",
+        "sha256": "dc9dcb89fb5ef0c79e45a38adc80715480ca00b1d5ff0116d3e23e8e0ff108d0",
+        "size": 165166
+      },
+      {
+        "mode": "100644",
+        "path": "drafts/core/00/draft-sergeev-wexp-core-00.txt",
+        "sha256": "227eee8fd1fc5fe8c5d823da61dd7bf1164610596feb5d2de090315b1677b190",
+        "size": 90841
+      },
+      {
+        "mode": "100644",
+        "path": "drafts/core/00/draft-sergeev-wexp-core-00.xml",
+        "sha256": "6cd8b680059cc81e1ec4c84737d9319ee242ef63e89c57de497bd57ede08d810",
+        "size": 94576
+      },
+      {
+        "mode": "100644",
+        "path": "manifests/core-00.json",
+        "sha256": "aedb37a50c9867d3eb88b7b92fd9c9400b8a4ff21cf2f3416c49d91005bde420",
+        "size": 2742
+      },
+      {
+        "mode": "100644",
+        "path": "scripts/verify_publication.py",
+        "sha256": "f92cea6c8e99cfdf4d565535c3a9c7751d3c698ea39a3bc70ee9d83a1ed4eafc",
+        "size": 4084
+      },
+      {
+        "mode": "100644",
+        "path": "tests/test_verify_publication.py",
+        "sha256": "fe573c4db2103e2e8930eec9d9ebd0b7edd72c998bd726c9f6c770b9bf52ad22",
+        "size": 521
+      }
+    ],
+    "snapshot": {
+      "format": "USTAR; UTF-8-byte-sorted regular files; no directory entries; uid/gid 0; empty uname/gname; mtime 0; inventory modes",
+      "sha256": "ce6e905def04dfa38808a96c0b802e74819ce9179511be3b0085b3651f14ea03"
+    },
+    "tree_digest_algorithm": "SHA-256 over 'wexp-public-tree-v1\\0' followed by UTF-8-byte-sorted mode\\0path\\0size_decimal\\0sha256hex\\n entries",
+    "tree_sha256": "3f27c301510b6d88f443ee1e005dbacbf1004fb9a174902e236e187fc618dd0e"
+  },
+  "repository": "WEXP-dev/wexp-spec",
+  "self_exclusion": {
+    "path": "provenance/PUBLIC-GENESIS.json",
+    "reason": "The manifest is excluded from its own payload inventory and digest to avoid a self-hash cycle."
+  },
+  "statements": [
+    "This public repository begins at an intentionally authorized public state.",
+    "Prior private engineering history is not part of this public Git history."
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "artifact_identity": "draft-sergeev-wexp-core-00",
+  "document": "draft-sergeev-wexp-core",
+  "revision": "00",
+  "publication_status": "historical_import",
+  "known_publication": {
+    "identity": "draft-sergeev-wexp-core-00",
+    "date": "2026-07-06T08:14:04Z",
+    "datatracker_url": "https://datatracker.ietf.org/doc/draft-sergeev-wexp-core/",
+    "announcement_url": "https://mailarchive.ietf.org/arch/msg/i-d-announce/gWfIlY5X3J3kjcvMfw9ZclnAeZc/"
+  },
+  "repository_import": {
+    "timestamp": "2026-08-11T09:07:16Z",
+    "source": "official IETF archive artifacts",
+    "local_source_match": {
+      "source_identity": "pre-import local comparison copy",
+      "sha256": "6cd8b680059cc81e1ec4c84737d9319ee242ef63e89c57de497bd57ede08d810",
+      "byte_identical_to_imported_xml": true
+    }
+  },
+  "provenance": {
+    "status": "ietf_publication_observed",
+    "original_publication_provenance": "IETF Datatracker event and archive artifacts observed",
+    "wexp_publication_record": "unavailable",
+    "note": "The observed IETF publication predates this repository pipeline and is not evidence that Core -00 was published through WEXP."
+  },
+  "integrity_scope": "current_repository_bytes",
+  "artifacts": [
+    {
+      "path": "drafts/core/00/draft-sergeev-wexp-core-00.xml",
+      "media_type": "application/rfc+xml",
+      "sha256": "6cd8b680059cc81e1ec4c84737d9319ee242ef63e89c57de497bd57ede08d810",
+      "source_url": "https://www.ietf.org/archive/id/draft-sergeev-wexp-core-00.xml",
+      "status": "official_ietf_archive_artifact"
+    },
+    {
+      "path": "drafts/core/00/draft-sergeev-wexp-core-00.txt",
+      "media_type": "text/plain",
+      "sha256": "227eee8fd1fc5fe8c5d823da61dd7bf1164610596feb5d2de090315b1677b190",
+      "source_url": "https://www.ietf.org/archive/id/draft-sergeev-wexp-core-00.txt",
+      "status": "official_ietf_archive_artifact"
+    },
+    {
+      "path": "drafts/core/00/draft-sergeev-wexp-core-00.html",
+      "media_type": "text/html",
+      "sha256": "dc9dcb89fb5ef0c79e45a38adc80715480ca00b1d5ff0116d3e23e8e0ff108d0",
+      "source_url": "https://www.ietf.org/archive/id/draft-sergeev-wexp-core-00.html",
+      "status": "official_ietf_archive_artifact"
+    }
+  ],
+  "claims": [
+    "The listed repository files currently match their declared SHA-256 digests.",
+    "The imported artifacts were retrieved from the listed IETF archive URLs."
+  ],
+  "non_claims": [
+    "This manifest does not establish that Core -00 was published through WEXP.",
+    "This manifest does not establish complete protocol correctness or independent conformance.",
+    "This manifest does not establish remote IETF execution beyond the observed Datatracker publication event."
+  ]
+}
