@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify observable repository-integrity properties of publication manifests."""
+"""Verify file hashes and XML syntax declared by WEXP publication manifests."""
 
 from __future__ import annotations
 
@@ -94,12 +94,13 @@ def verify_manifest(path: Path) -> list[str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "manifests",
         nargs="*",
         type=Path,
         default=sorted((ROOT / "manifests").glob("*.json")),
+        help="manifest files to verify (default: all JSON files under manifests/)",
     )
     args = parser.parse_args()
     if not args.manifests:

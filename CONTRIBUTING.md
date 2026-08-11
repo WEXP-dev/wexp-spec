@@ -26,4 +26,5 @@ Before proposing a change:
 3. Preserve the distinction between current repository integrity and original
    publication provenance.
 4. Do not claim IETF acceptance, interoperability, independent verification,
-   or complete protocol correctness unless that event was actually observed.
+   or complete protocol correctness unless the claimed event or result was
+   actually observed.

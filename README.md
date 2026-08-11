@@ -1,11 +1,11 @@
 # WEXP Specifications
 
-WEXP (Witnessed Execution Protocol) is an IETF-oriented specification effort
-for classifying the evidentiary strength of claims about actions performed by
-software and AI systems within explicit evidence and observation boundaries.
+WEXP (Witnessed Execution) is an IETF-oriented specification effort for
+classifying the evidentiary strength of claims about software and AI execution,
+subject to explicit evidence and observation boundaries.
 
-Logs, traces, approvals, tool-call records, and attestations can establish
-different facts. WEXP distinguishes where an action was observed, how authentic
+Logs, traces, approvals, tool-call records, and attestations provide different
+kinds of evidence. WEXP distinguishes where an action was observed, how authentic
 the resulting record is, and what execution-related claim the available
 evidence can support. It grades evidentiary strength; it does not certify an
 action's correctness, safety, or alignment.
@@ -15,33 +15,32 @@ specifications are authoritative; test vectors, implementations, runners, and
 CI do not define or override them. Pre-publication development is maintained
 separately and does not constitute a published specification state.
 
-## Published specification state
+## Published specification
 
-The current published specification state is
+The currently published specification is
 [`draft-sergeev-wexp-core-00`](https://datatracker.ietf.org/doc/draft-sergeev-wexp-core/00/).
 It is an Internet-Draft, not an Internet Standard.
 
-Repository copies of the official IETF archive artifacts are available as:
+This repository includes copies of the official IETF archive files:
 
 - [XML](drafts/core/00/draft-sergeev-wexp-core-00.xml)
 - [Plain text](drafts/core/00/draft-sergeev-wexp-core-00.txt)
 - [HTML](drafts/core/00/draft-sergeev-wexp-core-00.html)
 - [Integrity and provenance manifest](manifests/core-00.json)
 
-Core `-00` predates this repository pipeline and was imported later from the
-official IETF archive. Its import and current integrity checks do not claim that
-it was published through WEXP. The repository's Git root does not replace or
-redefine the original IETF publication event.
+Core `-00` was published in the official IETF archive before this repository
+was created, then imported here. The import and current integrity checks do not
+claim that it was published through WEXP. This repository's Git root does not
+replace or redefine the original IETF publication event.
 
 ## WEXP repositories
 
 - [Specifications — `wexp-spec`](https://github.com/WEXP-dev/wexp-spec) —
-  published WEXP specification states.
+  published WEXP specifications and their provenance.
 - [Test vectors — `wexp-vectors`](https://github.com/WEXP-dev/wexp-vectors) —
-  implementation-independent test-vector infrastructure.
+  schemas and validation tools for implementation-independent WEXP test vectors.
 - [Reference implementation — `wexp-ref`](https://github.com/WEXP-dev/wexp-ref)
-  — conservative implementation and generic tooling bounded by published WEXP
-  specifications.
+  — the reference implementation and generic execution tools.
 
 ## Integrity and provenance
 
@@ -50,10 +49,10 @@ public source URLs, and current SHA-256 digests. The repository verifier and CI
 check declared hashes and XML syntax. A passing check does not establish WEXP
 semantic correctness, protocol conformance, or IETF acceptance.
 
-[`provenance/PUBLIC-GENESIS.json`](provenance/PUBLIC-GENESIS.json) records the
-first intentionally authorized public repository state. Later commits do not
-amend that genesis inventory, and its timestamp does not claim that the
-included artifacts were originally created or published at the Git root.
+[`provenance/PUBLIC-GENESIS.json`](provenance/PUBLIC-GENESIS.json) inventories
+the files in this repository's first authorized public commit. Later commits do
+not amend that genesis inventory, and its timestamp does not claim that the
+included files were originally created or published at the Git root.
 
 ## Licensing / IETF legal status
 
