@@ -8,7 +8,7 @@ Logs, traces, approvals, tool-call records, and attestations can establish
 different facts. WEXP distinguishes where an action was observed, how authentic
 the resulting record is, and what execution-related claim the available
 evidence can support. It grades evidentiary strength; it does not certify an
-action's correctness, safety, or desirability.
+action's correctness, safety, or alignment.
 
 This repository contains intentionally published WEXP specification states. The
 specifications are authoritative; test vectors, implementations, runners, and
