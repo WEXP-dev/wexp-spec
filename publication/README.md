@@ -61,7 +61,7 @@ evidence is a failure, never a pass.
 | G09 | the Publication Candidate identity is present and exact |
 | G10 | no dirty or generated divergence exists |
 | G11 | the draft build and lint pass |
-| G12 | no unpublished or private path is referenced |
+| G12 | no unpublished or private reference enters the artifacts |
 | G13 | no secret or private material enters the artifacts |
 | G14 | candidate-approved XML and submission XML are the same bytes |
 
@@ -84,6 +84,13 @@ repository, and naming its location here would disclose unpublished work. A
 public reader can therefore verify that a candidate identity was bound, and
 that the submitted bytes match the authorized digest, but cannot independently
 resolve the candidate. That limitation is explicit and is not claimed away.
+
+G12 works from an allowlist of the three public WEXP repositories rather than a
+list of private ones. A denylist would have to name the private repositories in
+a public file — the disclosure the check exists to prevent — and would miss any
+repository created later. It also rejects absolute developer or CI checkout
+paths, and rejects Publication Candidate identifiers inside artifacts while
+permitting them in the authorization record, which is where they belong.
 
 ## Authentication, secrets, and the human confirmation boundary
 

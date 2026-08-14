@@ -56,26 +56,21 @@ PUBLICATION_AUTHORIZATION = "publication_authorization"
 HISTORICAL_IMPORT = "historical_import_non_authorization"
 RECORD_KINDS = frozenset({PUBLICATION_AUTHORIZATION, HISTORICAL_IMPORT})
 
-#: Repository slugs and path prefixes that must never appear in a public
-#: publication artifact. Pre-publication material lives outside this
-#: repository and naming it here would disclose unpublished work.
-PRIVATE_MARKERS: tuple[str, ...] = (
-    "wexp-work",
-    "wexp-archive",
-    "wexp-site",
-    "wexp-spec-bootstrap",
-    "wexp-vectors-bootstrap",
-    "wexp-ref-bootstrap",
-    "wexp-spec-legacy",
-    "wexp-core-legacy",
-    "wexp-verifier-legacy",
-    "wexp-native-record-repo",
-    "publication/candidates/",
-    "engineering/core-01",
-    "CORE-01-SEMANTIC-SNAPSHOT",
-    "/Users/",
-    "/home/runner/work/",
+#: The only public WEXP repositories. This is an allowlist on purpose: a
+#: denylist would have to name the private repositories in a public file, which
+#: is exactly the disclosure this check exists to prevent, and would silently
+#: miss any repository created later.
+PUBLIC_WEXP_REPOSITORIES = frozenset({"wexp-spec", "wexp-vectors", "wexp-ref"})
+WEXP_REPOSITORY_RE = re.compile(r"WEXP-dev/(?P<slug>[A-Za-z0-9._-]+)")
+
+#: Absolute paths from a developer machine or a CI runner checkout.
+LOCAL_PATH_RE = re.compile(
+    r"/Users/[A-Za-z0-9._-]+/|/home/[A-Za-z0-9._-]+/|[A-Za-z]:\\Users\\|/private/(?:tmp|var)/"
 )
+
+#: A Publication Candidate identifier belongs in an authorization record. It
+#: must never appear inside an artifact that would be published.
+CANDIDATE_ID_RE = re.compile(r"\bPC-(?:[a-z0-9]+-)+[0-9]{2}-[0-9]{3}\b")
 
 #: Credential shapes that must never reach a bundle, artifact, or log.
 SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -275,30 +270,34 @@ def load_authorization(path: Path) -> dict[str, Any]:
     return value
 
 
-def scan_bytes(data: bytes, label: str) -> list[str]:
-    """Return findings for secret shapes and private markers in one blob."""
+def scan_bytes(data: bytes, label: str, *, forbid_candidate_ids: bool = True) -> list[str]:
+    """Return findings for secret shapes and private references in one blob."""
 
     findings: list[str] = []
-    try:
-        text = data.decode("utf-8")
-    except UnicodeDecodeError:
-        text = data.decode("utf-8", errors="replace")
+    text = data.decode("utf-8", errors="replace")
     for name, pattern in SECRET_PATTERNS:
         if pattern.search(text):
             findings.append(f"{label}: possible {name}")
-    lowered = text.lower()
-    for marker in PRIVATE_MARKERS:
-        if marker.lower() in lowered:
-            findings.append(f"{label}: private marker {marker!r}")
+    for match in WEXP_REPOSITORY_RE.finditer(text):
+        slug = match.group("slug")
+        if slug not in PUBLIC_WEXP_REPOSITORIES:
+            findings.append(f"{label}: private marker reference to a non-public repository {slug!r}")
+    for match in LOCAL_PATH_RE.finditer(text):
+        findings.append(f"{label}: private marker local filesystem path {match.group(0)!r}")
+    if forbid_candidate_ids:
+        for match in CANDIDATE_ID_RE.finditer(text):
+            findings.append(f"{label}: private marker Publication Candidate identifier {match.group(0)!r}")
     return findings
 
 
-def scan_paths_for_leaks(paths: Iterable[Path]) -> list[str]:
+def scan_paths_for_leaks(paths: Iterable[Path], *, forbid_candidate_ids: bool = True) -> list[str]:
     findings: list[str] = []
     for path in paths:
         if not path.is_file() or path.suffix.lower() not in SCANNABLE_SUFFIXES:
             continue
-        findings.extend(scan_bytes(path.read_bytes(), path.name))
+        findings.extend(
+            scan_bytes(path.read_bytes(), path.name, forbid_candidate_ids=forbid_candidate_ids)
+        )
     return findings
 
 
@@ -673,29 +672,36 @@ def _check_workspace_and_build(context: GuardContext) -> list[CheckResult]:
 
 def _check_leaks(context: GuardContext) -> list[CheckResult]:
     results: list[CheckResult] = []
-    paths: list[Path] = list(context.scan_paths)
+
+    # Artifacts are what a reader would receive, so a Publication Candidate
+    # identifier inside one is a leak. The authorization record is the place
+    # that identifier legitimately lives, so it is scanned under a rule that
+    # permits it.
+    artifacts: list[Path] = list(context.scan_paths)
     authorized = context.authorization.get("authorized_xml")
     if isinstance(authorized, dict) and isinstance(authorized.get("path"), str):
         candidate = context.repo_root / authorized["path"]
         if candidate.is_file():
-            paths.append(candidate)
-    paths.append(context.authorization_path)
+            artifacts.append(candidate)
+    artifacts = list(dict.fromkeys(artifacts))
 
-    findings = scan_paths_for_leaks(dict.fromkeys(paths))
+    findings = scan_paths_for_leaks(artifacts)
+    findings.extend(scan_paths_for_leaks([context.authorization_path], forbid_candidate_ids=False))
     private = [item for item in findings if "private marker" in item]
     secrets = [item for item in findings if "possible" in item]
+    scanned = len(artifacts) + 1
 
     title = "no unpublished or private path is referenced"
     if private:
         results.append(_no("G12", title, "; ".join(sorted(set(private)))))
     else:
-        results.append(_ok("G12", title, f"scanned {len(paths)} artifact(s)"))
+        results.append(_ok("G12", title, f"scanned {scanned} artifact(s)"))
 
     title = "no secret or private material enters artifacts"
     if secrets:
         results.append(_no("G13", title, "; ".join(sorted(set(secrets)))))
     else:
-        results.append(_ok("G13", title, f"scanned {len(paths)} artifact(s)"))
+        results.append(_ok("G13", title, f"scanned {scanned} artifact(s)"))
     return results
 
 

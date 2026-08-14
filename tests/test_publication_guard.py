@@ -317,11 +317,37 @@ class TestWorkspaceBuildAndLeakChecks(GuardTestCase):
         build = guard.BuildReport(True, True, True, False, "NOT_RUN")
         self.assertFailsOn(guard.run_checks(self.context(build=build)), "G11")
 
-    def test_private_path_reference_fails_closed(self) -> None:
+    def test_non_public_repository_reference_fails_closed(self) -> None:
         leak = self.root / "leak.txt"
-        leak.write_text("see engineering/core-01/first-slice for details\n", encoding="utf-8")
+        leak.write_text("see https://github.com/WEXP-dev/not-a-public-repo for details\n", encoding="utf-8")
         report = guard.run_checks(self.context(scan_paths=(leak,)))
         self.assertFailsOn(report, "G12")
+
+    def test_public_repository_references_are_allowed(self) -> None:
+        allowed = self.root / "ok.txt"
+        allowed.write_text(
+            "see https://github.com/WEXP-dev/wexp-vectors and WEXP-dev/wexp-ref\n", encoding="utf-8"
+        )
+        report = guard.run_checks(self.context(scan_paths=(allowed,)))
+        self.assertNotIn("G12", {check.check_id for check in report.failures})
+
+    def test_local_checkout_path_fails_closed(self) -> None:
+        leak = self.root / "leak.txt"
+        leak.write_text("built from /home/runner/work/spec/spec\n", encoding="utf-8")
+        report = guard.run_checks(self.context(scan_paths=(leak,)))
+        self.assertFailsOn(report, "G12")
+
+    def test_candidate_identifier_inside_an_artifact_fails_closed(self) -> None:
+        leak = self.root / "leak.txt"
+        leak.write_text("derived from PC-core-01-001\n", encoding="utf-8")
+        report = guard.run_checks(self.context(scan_paths=(leak,)))
+        self.assertFailsOn(report, "G12")
+
+    def test_candidate_identifier_inside_the_authorization_record_is_allowed(self) -> None:
+        # The record is where the Candidate ID belongs; the passing fixture
+        # already carries PC-core-01-001 in publication_candidate.
+        report = guard.run_checks(self.context())
+        self.assertNotIn("G12", {check.check_id for check in report.failures})
 
     def test_credential_shaped_material_fails_closed(self) -> None:
         leak = self.root / "leak.json"
