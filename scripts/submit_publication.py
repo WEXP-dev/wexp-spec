@@ -110,7 +110,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(dts.NOT_PERFORMED)
         return 1 if (args.live and reasons) else 0
 
-    response = dts.submit_request(request, live=True)
+    try:
+        response = dts.submit_request(request, live=True)
+    except dts.SubmissionBlocked as exc:
+        # The client refused at its own hard guard, e.g. the live switch is not
+        # armed in this environment. Report it as a blocked run, not a crash.
+        print(f"BLOCKED: {exc}", file=sys.stderr)
+        print(dts.NOT_PERFORMED)
+        return 1
     outcome = {
         "artifact_identity": identity,
         "authorization_id": authorization.get("authorization_id"),
