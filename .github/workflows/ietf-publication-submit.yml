@@ -104,7 +104,7 @@ jobs:
       - name: Install pinned draft toolchain
         run: |
           python -m pip install --disable-pip-version-check --no-input "xml2rfc==3.34.0"
-          npm install --global --no-fund --no-audit "idnits@3.1.0"
+          npm install --global --no-fund --no-audit "@ietf-tools/idnits@3.1.0"
 
       - name: Rebuild the exact Phase-A bundle
         env:
