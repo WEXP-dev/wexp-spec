@@ -162,8 +162,14 @@ class TestNoForeignToolchainDependency(unittest.TestCase):
     """The regression guard for this repository's toolchain independence."""
 
     def test_no_tracked_file_reaches_for_a_foreign_toolchain(self) -> None:
+        # This file defines the patterns, so it necessarily contains them. The
+        # exemption is exactly one path and is deliberately not a wildcard: any
+        # other file matching is a real finding.
+        self_path = Path(__file__).resolve()
         offenders: list[str] = []
         for path in tracked_files():
+            if path.resolve() == self_path:
+                continue
             if not path.is_file() or path.suffix.lower() in {".html", ".txt", ".xml"}:
                 # Published draft artifacts are bytes from the IETF archive and
                 # are never edited here; they are covered by manifest hashes.
