@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "record_kind": "historical_import_non_authorization",
+  "authorization_id": "PA-core-00-import-001",
+  "draft_name": "draft-sergeev-wexp-core",
+  "revision": "00",
+  "artifact_identity": "draft-sergeev-wexp-core-00",
+  "publication_tag": "draft-sergeev-wexp-core-00",
+  "expected_submission_type": "IETF",
+  "publication_candidate": {
+    "candidate_id": null,
+    "source_workspace": null,
+    "status": "no Publication Candidate exists; Core-00 was published in the official IETF archive before this repository and this pipeline existed"
+  },
+  "authorized_xml": {
+    "path": "drafts/core/00/draft-sergeev-wexp-core-00.xml",
+    "sha256": "6cd8b680059cc81e1ec4c84737d9319ee242ef63e89c57de497bd57ede08d810"
+  },
+  "submission": {
+    "enabled": false,
+    "datatracker_user": null,
+    "replaces": [],
+    "reason": "Core-00 is already published at https://datatracker.ietf.org/doc/draft-sergeev-wexp-core/00/; resubmitting it is forbidden. This record exists so the publication pipeline can be exercised end to end against a real artifact without any possibility of submission."
+  },
+  "known_publication": {
+    "datatracker_url": "https://datatracker.ietf.org/doc/draft-sergeev-wexp-core/",
+    "date": "2026-07-06T08:14:04Z"
+  },
+  "claims": [
+    "The listed XML path currently matches the listed SHA-256 digest.",
+    "This record explicitly disables submission for this artifact identity."
+  ],
+  "non_claims": [
+    "This record is not a publication authorization.",
+    "This record does not establish that Core-00 was published through WEXP.",
+    "Exercising the pipeline against this record is not an IETF submission."
+  ]
+}
