@@ -1,0 +1,90 @@
+name: Draft build and lint
+
+# Ordinary development. This workflow builds, renders and lints drafts and runs
+# the publication tooling in dry-run only. It has no path to a submission: it
+# never runs the submit client with a live switch, and no secret is available
+# to it.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'engineering/**'
+
+permissions:
+  contents: read
+
+jobs:
+  draft-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+
+      - name: Provision the pinned draft toolchain
+        run: |
+          set -euo pipefail
+          python3 scripts/provision_toolchain.py
+          python3 -c "import json; print(json.load(open('build/toolchain/TOOLCHAIN.json'))['bin'])" \
+            >> "$GITHUB_PATH"
+
+      - name: Record the provisioned toolchain
+        run: cat build/toolchain/TOOLCHAIN.json
+
+      - name: Verify declared files, hashes, and XML syntax
+        run: python3 scripts/verify_publication.py
+
+      - name: Run unit tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Prepare Core-00 bundle (dry-run; never submits)
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          # Core-00 is a historical import: NOT READY is the expected verdict,
+          # so a non-zero exit is the correct outcome and must not fail the job.
+          python3 scripts/prepare_publication.py \
+            --identity draft-sergeev-wexp-core-00 \
+            --ref "refs/tags/draft-sergeev-wexp-core-00" \
+            --bundle-root build/publication/draft-sergeev-wexp-core-00 \
+            > build/core-00-prepare.log 2>&1 || true
+          cat build/core-00-prepare.log
+          grep -qx 'SUBMISSION NOT PERFORMED' build/core-00-prepare.log
+
+      - name: Assert no submission was performed
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          root = pathlib.Path("build/publication/draft-sergeev-wexp-core-00")
+          dry_run = json.loads((root / "evidence" / "dry-run.json").read_text())
+          manifest = json.loads((root / "BUNDLE-MANIFEST.json").read_text())
+          if dry_run["result"] != "SUBMISSION NOT PERFORMED":
+              sys.exit(f"unexpected dry-run result: {dry_run['result']}")
+          if dry_run["network_submission_performed"] or manifest["submission_performed"]:
+              sys.exit("a submission was recorded; this must never happen in CI")
+          print("SUBMISSION NOT PERFORMED")
+          PY
+
+      - name: Upload dry-run bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: core-00-dry-run-bundle
+          path: build/publication/draft-sergeev-wexp-core-00/
+          if-no-files-found: error
+          retention-days: 14

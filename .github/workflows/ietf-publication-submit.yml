@@ -1,0 +1,146 @@
+name: IETF publication SUBMIT (DISABLED)
+
+# Phase B. This workflow is deliberately hard-disabled and cannot submit an
+# Internet-Draft in its current configuration.
+#
+# It is triggerable only by an explicit manual dispatch, and the first job fails
+# closed unless a repository variable WEXP_PUBLICATION_ENABLED is set to the
+# exact string "true". That variable does not exist. Enabling publication is a
+# deliberate human act, performed together with creating the protected
+# "ietf-publication" environment with required reviewers.
+#
+# There is no push, pull_request, release or schedule trigger here, so no merge,
+# tag, or ordinary development event can reach this file.
+
+on:
+  workflow_dispatch:
+    inputs:
+      identity:
+        description: 'Exact artifact identity, e.g. draft-sergeev-wexp-core-01'
+        required: true
+        type: string
+      ref:
+        description: 'Signed publication tag ref, e.g. refs/tags/draft-sergeev-wexp-core-01'
+        required: true
+        type: string
+      expected_xml_sha256:
+        description: 'SHA-256 of the submission XML, copied from the Phase-A bundle'
+        required: true
+        type: string
+      confirm_identity:
+        description: 'Retype the artifact identity exactly to confirm'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Publication gate (fails closed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Refuse unless publication is explicitly enabled
+        env:
+          PUBLICATION_ENABLED: ${{ vars.WEXP_PUBLICATION_ENABLED }}
+          REPOSITORY: ${{ github.repository }}
+          IDENTITY: ${{ inputs.identity }}
+          CONFIRM: ${{ inputs.confirm_identity }}
+          REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          blocked=0
+          if [ "${PUBLICATION_ENABLED:-}" != "true" ]; then
+            echo "BLOCKED: repository variable WEXP_PUBLICATION_ENABLED is not 'true'" >&2
+            blocked=1
+          fi
+          if [ "${REPOSITORY}" != "WEXP-dev/wexp-spec" ]; then
+            echo "BLOCKED: publication may only run in WEXP-dev/wexp-spec, not ${REPOSITORY}" >&2
+            blocked=1
+          fi
+          if [ "${IDENTITY}" != "${CONFIRM}" ]; then
+            echo "BLOCKED: confirmation does not match the requested identity" >&2
+            blocked=1
+          fi
+          case "${REF}" in
+            refs/tags/*) ;;
+            *) echo "BLOCKED: publication requires a tag ref, got ${REF}" >&2; blocked=1 ;;
+          esac
+          if [ "${blocked}" -ne 0 ]; then
+            echo "SUBMISSION NOT PERFORMED"
+            exit 1
+          fi
+          echo "gate passed; a human confirmation email is still required by the IETF"
+
+  submit:
+    name: Submit to Datatracker
+    needs: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The environment does not exist yet. Create it with required reviewers
+    # before enabling publication; that adds a second, human approval barrier
+    # in front of this job.
+    environment: ietf-publication
+    steps:
+      - name: Check out the exact publication tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+
+      - name: Provision the pinned draft toolchain
+        run: |
+          set -euo pipefail
+          python3 scripts/provision_toolchain.py
+          python3 -c "import json; print(json.load(open('build/toolchain/TOOLCHAIN.json'))['bin'])" \
+            >> "$GITHUB_PATH"
+
+      - name: Record the provisioned toolchain
+        run: cat build/toolchain/TOOLCHAIN.json
+
+      - name: Rebuild the exact Phase-A bundle
+        env:
+          IDENTITY: ${{ inputs.identity }}
+          REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          python3 scripts/prepare_publication.py \
+            --identity "${IDENTITY}" \
+            --ref "${REF}" \
+            --bundle-root "build/publication/${IDENTITY}"
+
+      - name: Submit
+        env:
+          IDENTITY: ${{ inputs.identity }}
+          EXPECTED_XML_SHA256: ${{ inputs.expected_xml_sha256 }}
+          WEXP_DATATRACKER_SUBMIT: PUBLISH
+        run: |
+          set -euo pipefail
+          python3 scripts/submit_publication.py \
+            --bundle-root "build/publication/${IDENTITY}" \
+            --authorization "publication/authorizations/${IDENTITY}.json" \
+            --expected-xml-sha256 "${EXPECTED_XML_SHA256}" \
+            --json "build/publication/${IDENTITY}/evidence/submission-outcome.json" \
+            --live
+
+      - name: Upload submission evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: submission-evidence-${{ inputs.identity }}
+          path: build/publication/${{ inputs.identity }}/
+          if-no-files-found: warn
+          retention-days: 90

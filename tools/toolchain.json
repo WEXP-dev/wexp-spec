@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "description": "Authoritative declaration of the IETF draft toolchain used by the wexp-spec publication pipeline.",
+  "interpreter": {
+    "implementation": "CPython",
+    "version": "3.12"
+  },
+  "python_packages": {
+    "ConfigArgParse": "1.7.5",
+    "Jinja2": "3.1.6",
+    "MarkupSafe": "3.0.3",
+    "PyYAML": "6.0.3",
+    "certifi": "2026.7.22",
+    "charset-normalizer": "3.5.0",
+    "google-i18n-address": "3.1.1",
+    "idna": "3.18",
+    "intervaltree": "3.2.1",
+    "lxml": "6.1.1",
+    "natsort": "8.4.0",
+    "platformdirs": "4.11.3",
+    "pycountry": "26.2.16",
+    "requests": "2.34.2",
+    "sortedcontainers": "2.4.0",
+    "urllib3": "2.7.0",
+    "wcwidth": "0.8.2",
+    "xml2rfc": "3.34.0"
+  },
+  "direct_python_requirements": [
+    "xml2rfc==3.34.0"
+  ],
+  "node": {
+    "engine": ">=20",
+    "package": "@ietf-tools/idnits",
+    "version": "3.1.0",
+    "integrity": "sha512-buWTvfw9EU+fm5PyaI2dv07FlM0lcCQNMyXPiRxaLNdu7yDDmjJvU5auoRF8/e4Iv4/dBffRvx8atbBVohfXrA==",
+    "lockfile": "tools/node/package-lock.json"
+  },
+  "provenance": {
+    "python_index": "https://pypi.org",
+    "node_registry": "https://registry.npmjs.org",
+    "resolved_on": "2026-08-14",
+    "resolution_note": "Resolved independently on macOS arm64 CPython 3.12 and observed identical on ubuntu-latest CPython 3.12 in GitHub Actions run 31840889325."
+  }
+}

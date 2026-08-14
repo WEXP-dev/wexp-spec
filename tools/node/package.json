@@ -1,0 +1,10 @@
+{
+  "name": "wexp-draft-toolchain",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned IETF draft linting toolchain for the wexp-spec publication pipeline.",
+  "license": "SEE LICENSE IN ../../LICENSES/IETF-TRUST.md",
+  "dependencies": {
+    "@ietf-tools/idnits": "3.1.0"
+  }
+}
