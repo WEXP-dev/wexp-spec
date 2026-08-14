@@ -71,10 +71,15 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install pinned draft toolchain
+      - name: Provision the pinned draft toolchain
         run: |
-          python -m pip install --disable-pip-version-check --no-input "xml2rfc==3.34.0"
-          npm install --global --no-fund --no-audit "@ietf-tools/idnits@3.1.0"
+          set -euo pipefail
+          python3 scripts/provision_toolchain.py
+          python3 -c "import json; print(json.load(open('build/toolchain/TOOLCHAIN.json'))['bin'])" \
+            >> "$GITHUB_PATH"
+
+      - name: Record the provisioned toolchain
+        run: cat build/toolchain/TOOLCHAIN.json
 
       - name: Prepare publication bundle
         id: prepare
