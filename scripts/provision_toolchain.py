@@ -23,7 +23,11 @@ directory to prepend to ``PATH``.
 Usage:
 
     python3 scripts/provision_toolchain.py
-    export PATH="$(python3 scripts/provision_toolchain.py --print-path):$PATH"
+    export PATH="$(python3 -c 'import json; print(json.load(open("build/toolchain/TOOLCHAIN.json"))["bin"])'):$PATH"
+
+``--print-path`` prints the same directory but provisions first, so use it
+instead of the two commands above, not after them: every invocation rebuilds
+the virtualenv and ``node_modules`` from scratch.
 """
 
 from __future__ import annotations

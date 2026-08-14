@@ -44,6 +44,12 @@ installed matches the declaration, and writes `build/toolchain/TOOLCHAIN.json`
 recording the interpreter, package versions, lock digests, and the on-disk
 SHA-256 of each tool's entry point.
 
+`entry_point_sha256` records what was on disk for *that* installation and is
+not a portable identity: a Python console script embeds the absolute path of
+its virtualenv in the shebang, so the digest legitimately differs between
+prefixes and machines. The portable identities are the lock digests and the
+pinned versions; compare those across environments, not the entry points.
+
 The interpreter is pinned to the major.minor version the lock was resolved
 against. Provisioning refuses an interpreter that lives in a temporary
 directory or inside another project's `.tools` directory, because such an
