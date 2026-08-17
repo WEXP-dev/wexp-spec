@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -44,25 +45,63 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+# A manifest describes either a specification this repository imported after
+# someone else published it, or one this repository published itself. The two
+# make different provenance claims, so each carries its own required fields and
+# neither set may be satisfied by the other's evidence.
+HISTORICAL_IMPORT = "historical_import"
+WEXP_PUBLICATION = "wexp_publication"
+
+COMMON_FIELDS = {
+    "artifact_identity",
+    "revision",
+    "publication_status",
+    "provenance",
+    "integrity_scope",
+    "artifacts",
+}
+
+
 def verify_manifest(path: Path) -> list[str]:
     manifest = load_json(path)
-    required = {
-        "artifact_identity",
-        "revision",
-        "publication_status",
-        "repository_import",
-        "provenance",
-        "integrity_scope",
-        "artifacts",
-    }
-    missing = sorted(required - manifest.keys())
+    status = manifest.get("publication_status")
+    if status not in (HISTORICAL_IMPORT, WEXP_PUBLICATION):
+        fail(
+            f"{path}: publication_status must be {HISTORICAL_IMPORT!r} or "
+            f"{WEXP_PUBLICATION!r}, not {status!r}"
+        )
+    extra = {"repository_import"} if status == HISTORICAL_IMPORT else {"freeze"}
+    missing = sorted((COMMON_FIELDS | extra) - manifest.keys())
     if missing:
         fail(f"{path}: missing fields: {', '.join(missing)}")
-    if manifest["publication_status"] != "historical_import":
-        fail(f"{path}: historical import manifest must retain historical_import status")
+
     provenance = manifest["provenance"]
-    if not isinstance(provenance, dict) or provenance.get("wexp_publication_record") != "unavailable":
-        fail(f"{path}: historical import must record unavailable WEXP publication record")
+    if not isinstance(provenance, dict):
+        fail(f"{path}: provenance must be an object")
+    record = provenance.get("wexp_publication_record")
+    if status == HISTORICAL_IMPORT:
+        if record != "unavailable":
+            fail(f"{path}: historical import must record unavailable WEXP publication record")
+    else:
+        # A self-published specification must name the exact authorization it was
+        # published under. "unavailable" is the historical-import answer and would
+        # silently understate the provenance this class is required to carry.
+        if not isinstance(record, str) or not record.strip() or record == "unavailable":
+            fail(f"{path}: WEXP publication must name its publication record")
+        freeze = manifest["freeze"]
+        if not isinstance(freeze, dict) or not isinstance(freeze.get("identity"), str):
+            fail(f"{path}: WEXP publication must declare freeze.identity")
+        frozen = freeze.get("xml_sha256")
+        if not isinstance(frozen, str) or not re.fullmatch(r"[0-9a-f]{64}", frozen):
+            fail(f"{path}: freeze.xml_sha256 must be 64 lowercase hexadecimal characters")
+        declared = {
+            entry.get("sha256")
+            for entry in manifest["artifacts"]
+            if isinstance(entry, dict) and str(entry.get("path", "")).endswith(".xml")
+        }
+        if frozen not in declared:
+            fail(f"{path}: no declared XML artifact matches freeze.xml_sha256 {frozen}")
+
     if manifest["integrity_scope"] != "current_repository_bytes":
         fail(f"{path}: integrity scope must not imply original-publication proof")
 
