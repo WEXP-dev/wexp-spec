@@ -25,10 +25,11 @@ Internet-Draft, not an Internet Standard.
 - [HTML](drafts/core/01/draft-sergeev-wexp-core-01.html)
 - [Integrity and provenance manifest](manifests/core-01.json)
 
-These are frozen bytes, published unchanged. Publication here is a repository
-event; it is not an IETF publication event and does not claim IETF acceptance or
-adoption. Once revision `01` is observed in the official IETF archive, its
-Datatracker identity and archive digests are recorded in the manifest.
+These are frozen bytes, published unchanged. Revision `01` is posted at the IETF
+as [`draft-sergeev-wexp-core-01`](https://datatracker.ietf.org/doc/draft-sergeev-wexp-core/01/)
+(2026-08-17). The XML the IETF serves is byte-identical to the XML here, and so
+is the plain text; the IETF renders its own HTML, which differs as expected.
+Being posted is not IETF adoption, working-group acceptance, or standardization.
 
 ### Previous revision
 
