@@ -26,8 +26,9 @@
   "submission": {
     "enabled": true,
     "datatracker_user": "mikhailsergeev369@gmail.com",
-    "replaces": ["draft-sergeev-wexp-core"],
-    "reason": "Founder authorized publication of the frozen Core-01 bytes as the next revision of the existing draft, enumerating the exact artifact identities recorded here."
+    "replaces": [],
+    "reason": "Founder authorized publication of the frozen Core-01 bytes as the next revision of the existing draft, enumerating the exact artifact identities recorded here.",
+    "replaces_note": "Empty by design. 'replaces' declares that this draft supersedes a different Internet-Draft; revision 01 is the next revision of the same document and is identified by its own name and revision."
   },
   "freeze": {
     "identity": "CORE-01-FROZEN-001",
