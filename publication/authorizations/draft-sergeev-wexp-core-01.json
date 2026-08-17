@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "record_kind": "publication_authorization",
+  "authorization_id": "PA-core-01-001",
+  "draft_name": "draft-sergeev-wexp-core",
+  "revision": "01",
+  "artifact_identity": "draft-sergeev-wexp-core-01",
+  "publication_tag": "draft-sergeev-wexp-core-01",
+  "expected_submission_type": "IETF",
+  "authorized_by": {
+    "identity": "founder",
+    "date": "2026-08-16"
+  },
+  "publication_candidate": {
+    "candidate_id": "PC-core-01-001",
+    "source_workspace": "private engineering workspace",
+    "source_commit": "83e3fa770d0ffdf635eae28101343a3540c07e69",
+    "candidate_tree_sha256": "104240fdbab4f37e7b1eeeaba7868faa27569d256ee11e25ee8f6039965ac642",
+    "authorized_xml_sha256": "84c0a16467585c29925339a10dd287c2e67bfe21ed592826254bf424dc24f56d"
+  },
+  "authorized_xml": {
+    "path": "drafts/core/01/draft-sergeev-wexp-core-01.xml",
+    "sha256": "84c0a16467585c29925339a10dd287c2e67bfe21ed592826254bf424dc24f56d",
+    "bytes": 103095
+  },
+  "submission": {
+    "enabled": true,
+    "datatracker_user": "mikhailsergeev369@gmail.com",
+    "replaces": ["draft-sergeev-wexp-core"],
+    "reason": "Founder authorized publication of the frozen Core-01 bytes as the next revision of the existing draft, enumerating the exact artifact identities recorded here."
+  },
+  "freeze": {
+    "identity": "CORE-01-FROZEN-001",
+    "date": "2026-08-16",
+    "semantic_delta_from_predecessor": "NONE"
+  },
+  "claims": [
+    "The listed XML path currently matches the listed SHA-256 digest.",
+    "A human authorized submission of this exact artifact identity."
+  ],
+  "non_claims": [
+    "This record does not establish IETF acceptance, adoption, or publication.",
+    "This record does not claim a hosted cross-platform qualification matrix; that evidence is deferred and is not represented as passing.",
+    "A queued submission is not a publication; Datatracker requires author confirmation by email before the revision is posted."
+  ]
+}
