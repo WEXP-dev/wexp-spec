@@ -17,11 +17,23 @@ separately and does not constitute a published specification state.
 
 ## Published specification
 
-The currently published specification is
-[`draft-sergeev-wexp-core-00`](https://datatracker.ietf.org/doc/draft-sergeev-wexp-core/00/).
-It is an Internet-Draft, not an Internet Standard.
+The current specification state is `draft-sergeev-wexp-core-01`. It is an
+Internet-Draft, not an Internet Standard.
 
-This repository includes copies of the official IETF archive files:
+- [XML](drafts/core/01/draft-sergeev-wexp-core-01.xml) — the authoritative artifact
+- [Plain text](drafts/core/01/draft-sergeev-wexp-core-01.txt)
+- [HTML](drafts/core/01/draft-sergeev-wexp-core-01.html)
+- [Integrity and provenance manifest](manifests/core-01.json)
+
+These are frozen bytes, published unchanged. Publication here is a repository
+event; it is not an IETF publication event and does not claim IETF acceptance or
+adoption. Once revision `01` is observed in the official IETF archive, its
+Datatracker identity and archive digests are recorded in the manifest.
+
+### Previous revision
+
+[`draft-sergeev-wexp-core-00`](https://datatracker.ietf.org/doc/draft-sergeev-wexp-core/00/)
+remains available:
 
 - [XML](drafts/core/00/draft-sergeev-wexp-core-00.xml)
 - [Plain text](drafts/core/00/draft-sergeev-wexp-core-00.txt)
@@ -32,6 +44,11 @@ Core `-00` was published in the official IETF archive before this repository
 was created, then imported here. The import and current integrity checks do not
 claim that it was published through WEXP. This repository's Git root does not
 replace or redefine the original IETF publication event.
+
+## Reporting a vulnerability
+
+See [`SECURITY.md`](SECURITY.md). Security vulnerabilities in WEXP Core should be
+reported through GitHub Private Vulnerability Reporting for this repository.
 
 ## WEXP repositories
 

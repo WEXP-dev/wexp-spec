@@ -1,0 +1,2464 @@
+
+
+
+
+Network Working Group                                    M. Sergeev, Ed.
+Internet-Draft                                                  V. Ikher
+Intended status: Informational                    Independent Researcher
+Expires: 15 February 2027                                 14 August 2026
+
+
+      The Witnessed Execution Protocol (WEXP): Core Specification
+                       draft-sergeev-wexp-core-01
+
+Abstract
+
+   The Witnessed Execution Protocol (WEXP) Core defines carrier-neutral
+   appraisal semantics for execution-related evidence.  It defines four
+   distinct content bases, two independent evidence qualifiers, the
+   Boundary Ceiling, exact-claim support, deterministic accept,
+   downgrade, and reject verdicts, composition without inflation, and a
+   normalized interface between evidence-carrying profiles and
+   appraisers.  WEXP Core does not define a record serialization,
+   signature envelope, action identifier, authorization model, or
+   evidence-artifact schema.  A companion Native Record profile can
+   encode the normalized inputs defined here, and other carriers can do
+   so without adopting that record format.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 15 February 2027.
+
+Copyright Notice
+
+   Copyright (c) 2026 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+
+
+
+Sergeev & Ikher         Expires 15 February 2027                [Page 1]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+     1.1.  Scope and Non-Goals . . . . . . . . . . . . . . . . . . .   3
+     1.2.  Layered Architecture  . . . . . . . . . . . . . . . . . .   4
+     1.3.  Relationship to Related Work  . . . . . . . . . . . . . .   5
+   2.  Conventions and Terminology . . . . . . . . . . . . . . . . .   5
+   3.  Conformance Classes . . . . . . . . . . . . . . . . . . . . .   6
+   4.  Claim Model . . . . . . . . . . . . . . . . . . . . . . . . .   6
+     4.1.  Exact Action Target . . . . . . . . . . . . . . . . . . .   6
+     4.2.  Content Bases . . . . . . . . . . . . . . . . . . . . . .   7
+     4.3.  Evidence Qualifiers . . . . . . . . . . . . . . . . . . .   7
+     4.4.  Typed Claims and Admissible Domain  . . . . . . . . . . .   8
+     4.5.  Structural Order  . . . . . . . . . . . . . . . . . . . .   8
+     4.6.  Notation and Legacy Display Labels  . . . . . . . . . . .   8
+   5.  Presentation and Display Projection . . . . . . . . . . . . .   9
+   6.  Normalized Appraisal Input  . . . . . . . . . . . . . . . . .  10
+     6.1.  Logical Types, Identity, and Equality . . . . . . . . . .  15
+     6.2.  Core Ingress, Validity Classes, and Fatal Precedence  . .  16
+   7.  Boundary Ceiling  . . . . . . . . . . . . . . . . . . . . . .  18
+   8.  Appraisal Procedure . . . . . . . . . . . . . . . . . . . . .  18
+     8.1.  Supported Claim Set . . . . . . . . . . . . . . . . . . .  19
+     8.2.  Verdict . . . . . . . . . . . . . . . . . . . . . . . . .  20
+     8.3.  Support Relation  . . . . . . . . . . . . . . . . . . . .  21
+     8.4.  Normative Algorithm . . . . . . . . . . . . . . . . . . .  21
+     8.5.  Required Appraisal Result . . . . . . . . . . . . . . . .  24
+     8.6.  Substantive Reasons and Evaluation Gaps . . . . . . . . .  26
+   9.  Composition . . . . . . . . . . . . . . . . . . . . . . . . .  28
+   10. Non-Inference and Coverage Rules  . . . . . . . . . . . . . .  30
+   11. Cross-Carrier Equivalence . . . . . . . . . . . . . . . . . .  32
+   12. Core Conformance and Evaluation Scope . . . . . . . . . . . .  32
+   13. Normative Semantic Test Vectors . . . . . . . . . . . . . . .  35
+   14. Security Considerations . . . . . . . . . . . . . . . . . . .  39
+   15. IANA Considerations . . . . . . . . . . . . . . . . . . . . .  40
+   16. Normative References  . . . . . . . . . . . . . . . . . . . .  42
+   17. Informative References  . . . . . . . . . . . . . . . . . . .  42
+   Appendix A.  Changes Since draft-sergeev-wexp-core-00 . . . . . .  43
+   Appendix B.  Disclosure . . . . . . . . . . . . . . . . . . . . .  43
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  43
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027                [Page 2]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+1.  Introduction
+
+   Software and AI systems produce logs, traces, approvals, tool-call
+   records, attestations, provenance statements, and transparency
+   receipts.  These artifacts answer different questions and are often
+   treated as if they were interchangeable.  An authentic record can
+   contain an unsupported claim; a provenance statement can identify
+   origin without proving a runtime event; and an independently
+   verifiable invocation remains evidence of invocation rather than
+   execution.
+
+   WEXP provides a bounded appraisal layer.  Given normalized findings
+   about an exact action, a claimed content base, an evidence-producing
+   boundary, and any applicable provenance or independent-verification
+   evidence, WEXP determines the set of exact claims that the findings
+   support.  It then compares the asserted claim with that set and
+   returns one of three verdicts.  The result grades support for a
+   claim.  It does not certify correctness, safety, authority, policy
+   compliance, or alignment.
+
+   The conceptual basis for this work is the Witnessability Model
+   [WITNESSABILITY] under the Witnessability Conceptual Core [WCC-CORE].
+   This document is self-contained: conceptual publications are
+   informative and are not required to implement the normative appraisal
+   procedure.
+
+1.1.  Scope and Non-Goals
+
+   This document specifies:
+
+   *  the content bases observation, intent, invocation, and execution;
+
+   *  the qualifiers PROV and IV;
+
+   *  the normalized input contract used by carrier and evidence
+      profiles;
+
+   *  the Boundary Ceiling and exact-support rules;
+
+   *  the appraisal result and the verdicts accept, downgrade, and
+      reject;
+
+   *  composition and limitation inheritance; and
+
+   *  semantic reason tokens and conformance requirements.
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027                [Page 3]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   This document does not define JSON, CBOR, CDDL, canonicalization,
+   signatures, key discovery, record identifiers, global action
+   identity, authorization or principal binding, action lifecycle
+   states, chain discovery, evidence-artifact formats, trust-anchor
+   discovery, policy gates, or a transparency service.  It also does not
+   assign a global EXECUTED state.  Those concerns belong to carriers,
+   profiles, policies, or adjacent specifications.
+
+   Completion of a larger process, a durable external effect, goal
+   satisfaction, nonoccurrence, coverage completeness, and authorization
+   validity are separate facets.  They are not additional content bases
+   in this document.
+
+1.2.  Layered Architecture
+
+   carrier or evidence profile
+           |
+           | parse, authenticate, validate semantics,
+           | bind findings to an exact target and base
+           v
+   Normalized Appraisal Input
+           |
+           v
+   WEXP Appraisal Core
+           |
+           v
+   Witnessability Appraisal
+
+   A carrier profile maps its fields and artifacts into the normalized
+   input defined in Section 6.  WEXP Core consumes only that normalized
+   input.  A carrier profile MUST NOT treat field presence, a digest
+   reference, a signature, or an artifact label as a passing semantic
+   finding unless the profile-defined predicate for the exact claim has
+   been evaluated successfully.
+
+   The dependency is one-way: a carrier profile depends normatively on
+   this Core; this Core has no normative dependency on any carrier.  Two
+   carriers that produce equivalent normalized inputs under the same
+   evaluation context produce the same Core appraisal.
+
+
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027                [Page 4]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   A Core invocation begins only after an upstream mapper has produced
+   one complete logical AppraisalInput.  Failure to parse, authenticate,
+   or interpret a carrier well enough to construct that input produces
+   no Core appraisal and remains a carrier or mapping-profile
+   diagnostic.  A mapper does not fabricate a partial Core input solely
+   to transport such a failure.  In particular, a carrier-specific
+   unknown-extension error is not a Core fatal reason and is not
+   translated to E_UNKNOWN_CRITICAL_SEMANTIC.  That Core token has the
+   narrower meaning defined in Section 6.2.
+
+1.3.  Relationship to Related Work
+
+   RATS [RFC9334] appraises evidence about an environment.  Transparency
+   systems establish registration and custody.  Provenance systems
+   describe origin and production history.  Action-record, capsule,
+   receipt, and audit specifications define carriers and lifecycle
+   objects.  WEXP is complementary: it defines the per-action evidence-
+   to-claim appraisal semantics that those systems can invoke through a
+   mapping profile.
+
+   WEXP does not duplicate canonical action identity, evidence-
+   collection sufficiency, authorization evidence chains, action
+   lifecycle state, or SCITT carrier semantics.  Such systems can
+   consume a WEXP Appraisal as one typed result, and WEXP profiles can
+   consume their artifacts as evidence, without either layer taking
+   ownership of the other.
+
+2.  Conventions and Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in BCP
+   14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
+
+   Action Target  The exact action, decision, invocation, execution, or
+      observed event to which a claim and its supporting findings are
+      bound.  Core treats the target as opaque and defines no identifier
+      format.
+
+   Content Base  The kind of action-related content asserted by a claim:
+      observation, intent, invocation, or execution.
+
+   Qualifier  An additional property of evidence supporting an exact
+      content claim.  A qualifier does not change the content base.
+
+   Normalized Evidence Fact  A profile-produced finding with an exact
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027                [Page 5]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+      target, an exact content base or qualifier role, an evaluation
+      status, basis references, and limitations.
+
+   Boundary Ceiling  The strongest content base that the accepted
+      evidence-producing boundary can warrant.  It excludes stronger
+      claims but never creates support.
+
+   Exact Support  Support established by the predicate for the same
+      action target, content base, qualifier set, and evaluation context
+      as the claim.
+
+   Witnessability Appraisal  The result produced by the Core procedure,
+      including the supported claim set, verdict, reasons, evaluation
+      gaps, limitations, boundary information, and evaluation context.
+
+3.  Conformance Classes
+
+   This document defines the Conformance Classes CC0 through CC5.  A
+   Conformance Class classifies the capability of an appraising
+   implementation.  It is orthogonal to the appraisal result: it scopes
+   what an implementation assesses, and it never bounds, raises, or
+   lowers the state a record is found to support.
+
+   A Conformance Class MUST NOT be used as an input to the appraisal
+   procedure of Section 8, as a ceiling on a supported claim, or as a
+   sort key over claims.  Where an implementation lacks the capability
+   required to assess a claim, the applicable fail-closed
+   *_NOT_EVALUATED outcome of Section 8 applies; the implementation MUST
+   NOT downgrade the appraisal result in place of reporting that it did
+   not evaluate.
+
+   No capability bound on a verified state is defined by this document.
+   A profile or deployment that requires a minimum Conformance Class
+   states that requirement in its own terms; it does not thereby alter
+   what any record supports.
+
+4.  Claim Model
+
+4.1.  Exact Action Target
+
+   Every asserted claim and every finding used to support it MUST be
+   bound to an exact action target.  Equality and binding are defined by
+   the mapping profile.  Core does not require or create a global action
+   identifier.
+
+   A correlation hint, record identifier, shared timestamp, similar
+   payload, or common signer MUST NOT be treated as an exact target
+   binding unless an applicable profile defines and validates that use.
+
+
+
+Sergeev & Ikher         Expires 15 February 2027                [Page 6]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+4.2.  Content Bases
+
+   This document defines four distinct content bases:
+
+   observation  A positive finding that an event concerning the exact
+      action target was recorded or reported.  Absence of evidence does
+      not support observation.
+
+   intent  A specific intention, approval, plan, or decision concerning
+      the exact action and its bound arguments is evidenced.  It does
+      not establish authority, approval validity, policy satisfaction,
+      invocation, or execution.
+
+   invocation  The exact invocation crossed an observed invocation
+      boundary.  It does not establish that the invoked operation
+      executed or produced an effect.
+
+   execution  Execution of the exact action was evidenced at an
+      execution-relevant controlled boundary.  It does not establish
+      completion of a larger process, durable external effect, goal
+      satisfaction, authorization validity, or correctness.
+
+   The bases have a structural content-depth order:
+
+   observation < intent < invocation < execution
+
+   This order is not an entailment relation.  Evidence supporting one
+   base does not, by that fact alone, support any other base.  A mapping
+   profile MUST evaluate each base predicate independently.
+
+4.3.  Evidence Qualifiers
+
+   PROV  The established execution of the exact action is linked to
+      provenance that has been semantically validated and accepted in
+      the evaluation context.  PROV applies only to the execution base.
+      Provenance for intent, invocation, configuration, an environment,
+      or an output object does not by itself satisfy PROV for the
+      action's execution.
+
+   IV  The exact content claim, at its exact base, has been
+      independently verified under an applicable profile and trust
+      configuration.  IV can qualify any supported base and does not
+      raise that base.
+
+   The qualifiers are independent.  Neither implies the other.  IV for
+   invocation MUST NOT be transferred to execution, and IV or PROV for
+   one action MUST NOT be transferred to another.
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027                [Page 7]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   A different key, signer, organization label, or trust root is not
+   sufficient by itself to establish independence.  The applied IV
+   profile MUST define the administrative, operational, and technical
+   criteria it evaluates.
+
+4.4.  Typed Claims and Admissible Domain
+
+   A typed claim is a pair (base, qualifiers), where base is a content
+   base and qualifiers is a subset of {PROV, IV}. The claim is
+   admissible only if PROV is absent or the base is execution.
+
+   The admissible claims are:
+
+   (observation, {})       (observation, {IV})
+   (intent, {})            (intent, {IV})
+   (invocation, {})        (invocation, {IV})
+   (execution, {})         (execution, {PROV})
+   (execution, {IV})       (execution, {PROV, IV})
+
+   An asserted claim outside this domain is rejected with
+   E_CLAIM_OUT_OF_DOMAIN.  An appraiser MUST NOT silently delete an
+   invalid qualifier and reinterpret the assertion as another claim.
+
+4.5.  Structural Order
+
+   For structural comparison only:
+
+   (b1, A1) <= (b2, A2)  iff  b1 <= b2 and A1 is a subset of A2
+
+   This is a partial order.  For example, (execution, {PROV}) and
+   (execution, {IV}) are incomparable, as are (invocation, {IV}) and
+   (execution, {}).
+
+   The structural order MUST NOT be used as an exact-support predicate.
+   In particular, support for execution does not accept an intent claim
+   unless the exact intent predicate also passes.
+
+4.6.  Notation and Legacy Display Labels
+
+   This document writes a typed claim using the base name followed by
+   its qualifier set.  The following WL labels are retained only as a
+   familiar, lossy display convention:
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027                [Page 8]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+                  +===============+=====================+
+                  | Display label | Typed claim         |
+                  +===============+=====================+
+                  | WL0           | (observation, {})   |
+                  +---------------+---------------------+
+                  | WL1           | (intent, {})        |
+                  +---------------+---------------------+
+                  | WL2           | (invocation, {})    |
+                  +---------------+---------------------+
+                  | WL3           | (execution, {})     |
+                  +---------------+---------------------+
+                  | WL4           | (execution, {PROV}) |
+                  +---------------+---------------------+
+                  | WL5           | (execution, {IV})   |
+                  +---------------+---------------------+
+
+                                  Table 1
+
+   Other admissible claims have no bare legacy label.  A display
+   projection is not a protocol primitive, an ordering function, or a
+   complete appraisal.  A conforming implementation MUST NOT compare,
+   bound, compose, or accept claims by numeric WL labels.
+
+5.  Presentation and Display Projection
+
+   The authoritative form of a claim in this document is its typed
+   state: the pair of a content base and a set of evidence qualifiers,
+   written in the bracketed notation of Section 4.  The bracketed
+   notation is the canonical form for showing qualified states.
+
+   A carrier that also exposes a single bare display label MUST NOT emit
+   a record in a qualified state without carrying that record's
+   authoritative typed state alongside the label.  A bare display label
+   is a projection of the typed state; it is never the authority for it,
+   and it is never a sort key.
+
+   Where a display label is produced, it MUST be produced by a declared
+   projection with the following properties.  The projection is profile-
+   defined and justified: this document presumes no total order over
+   typed states, and any projection into one requires justification by
+   the profile that declares it.  The projection is version-
+   identifiable: a reader of a display value can determine which
+   revision of which projection produced it.  The projection never
+   exceeds the typed state: the label denotes the greatest bare label
+   that is less than or equal to the typed state under the declared
+   projection.
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027                [Page 9]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   Where the declared projection is ambiguous for the state consisting
+   of the execution base with both the provenance and independent-
+   verification qualifiers, the label denotes WL4.  Both WL4 and WL5 are
+   maximal bare labels below that state and neither exceeds the other,
+   so the projection alone does not determine the value; this resolution
+   is fixed by this document and is not left to the projection.
+
+   A display label MUST equal the value of the declared projection
+   applied to the authoritative typed state.  Consistency is defined
+   against the projection, not against any tabular image of it.  A
+   divergence between a display label and the authoritative typed state
+   is a fatal defect of the input: the record is rejected and no claim
+   is appraised.  The concrete error token for that condition is bound
+   by the carrier (Section 11), not by this document.
+
+   A conforming reader is cautioned that a schema-valid record is not
+   thereby a correctly projected record: schema validity concerns the
+   integrity of the bytes, while a projection concerns semantic
+   continuity between the label and the state.  A reader of an earlier
+   revision of this protocol should not assume that a bare label carried
+   there denotes the same state under the projection declared here.
+
+6.  Normalized Appraisal Input
+
+   The set of inputs this document requires is exhaustive for WEXP Core:
+   for each claimed state it is the complete set of Core-required
+   inputs.  A profile MAY require more; Core does not.  Requirements are
+   keyed on the authoritative typed state of Section 5, never on a
+   display label.
+
+   Core does not require a commitment to the input at the execution
+   level; a claim at the execution level therefore binds the execution,
+   not the input.  A profile that needs the input bound at that level
+   MUST require it.  Binding an input at the execution level would add a
+   field, not a witness: the declaring sentence above and this deferring
+   sentence are about one and the same object, and that is said here
+   plainly rather than left to be inferred.
+
+   A mapping profile supplies the following logical input.  This is an
+   abstract contract, not a wire schema.
+
+   AppraisalInput = {
+     semantics_version,       ; "wexp-core-1"
+     target,
+     asserted_claim,
+     evaluation_context: {
+       id,
+       evaluated_at,
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 10]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+       trust_configuration,
+       profile_identifiers[]  ; immutable profile revisions;
+                              ; bind applicable registries
+     },
+
+     boundary_finding: {
+       target,
+       evaluation_context_ref,
+       ? ceiling_base,         ; REQUIRED when status is supported;
+                                ; ignored otherwise
+       status,                 ; supported | unsupported | not-evaluated
+       target_binding,         ; supported | unsupported | not-evaluated
+       grounding,              ; asserted-only | attributed | attested |
+                                ; not-evaluated
+       basis_refs[],
+       reasons[],
+       limitations[]
+     },
+
+     base_findings[]: {
+       target,
+       evaluation_context_ref,
+       base,
+       target_binding,         ; supported | unsupported | not-evaluated
+       semantic_validation,    ; supported | unsupported | not-evaluated
+       basis_refs[],
+       reasons[],
+       limitations[]
+     },
+
+     qualifier_findings[]: {
+       target,
+       evaluation_context_ref,
+       qualifier,              ; PROV | IV
+       qualified_base,
+       target_binding,
+       semantic_validation,
+       independence_validation, ; supported | unsupported |
+                                ; not-evaluated | not-applicable
+       basis_refs[],
+       reasons[],
+       limitations[]
+     },
+
+     recorder_relations[]: {
+       profile_identifier,
+       relation_token,
+       subject_ref,
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 11]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+       object_ref,
+       basis_refs[],
+       limitations[]
+     },
+     counter_evidence[]: {
+       status,                 ; not-supplied | not-evaluated |
+                                ; resolved-no-defeat |
+                                ; unresolved-material | defeating
+       affected_claims[],      ; or all-admissible-claims
+       basis_refs[],
+       reasons[],              ; substantive-category profile tokens
+       limitations[]
+     },
+     evaluation_scope,         ; initial-capability-name or
+                                ; (profile_identifier, local_name) ->
+                                ; evaluated | not-evaluated
+     profile_evaluation_gaps[]: {
+       target,
+       evaluation_context_ref,
+       token,
+       ? current_scope_capability, ; authenticity | composition;
+                                   ; absent for inherited gaps
+       affected_claims[],      ; or all-admissible-claims
+       basis_refs[],
+       limitations[]
+     },
+     inherited_limitations[],
+     fatal_conditions[]
+   }
+
+   Every displayed top-level component is REQUIRED.  The only semantics
+   version defined by this document is wexp-core-1.  Any other text-atom
+   value is fatal and produces E_UNSUPPORTED_SEMANTICS_VERSION.  An
+   absent or non-text value is malformed under Section 6.2.
+
+   The mapping process MUST be claim-independent: it evaluates every
+   available base material and every evidence role, not only the
+   asserted base or asserted qualifiers.  This permits an appraisal to
+   report an incomparable supported alternative, such as PROV-supported
+   execution when IV-supported execution was asserted.
+
+   A passing base or qualifier finding MUST state that the evidence was
+   semantically validated, accepted under the evaluation context, and
+   bound to the exact target and exact base named by the finding.
+   Presence of a reference, a valid digest, a signature, or an artifact
+   whose media type suggests provenance or attestation is insufficient.
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 12]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   A profile MUST distinguish unsupported, meaning the relevant
+   assessment ran and failed, from not-evaluated, meaning the assessment
+   was unavailable or outside the evaluation scope.  It MUST preserve
+   all applicable limitations and evaluation gaps.
+
+   All findings are explicitly scoped.  The boundary finding, every base
+   and qualifier aggregate, and every profile-gap entry have a target
+   equal to the top-level target and an evaluation_context_ref equal to
+   the top-level evaluation-context identifier.  A foreign-scoped
+   aggregate is not negative evidence for this appraisal; it violates
+   the normalized-input cross-field contract and produces
+   E_PROFILE_MAPPING_INVALID.  Evidence that was safely evaluated but
+   covers or binds a different target or base is represented by a
+   correctly scoped aggregate with a non-passing status and, when
+   applicable, E_EVIDENCE_COVERAGE_MISMATCH or E_EVIDENCE_NOT_BOUND.
+   The boundary finding additionally requires supported target binding
+   before its ceiling can be used.
+
+   A normalized input contains exactly one aggregated boundary finding,
+   at most one aggregated base finding for each (target, base,
+   evaluation_context) key, and at most one aggregated qualifier finding
+   for each (target, qualifier, qualified_base, evaluation_context) key.
+   A mapping profile combines multiple raw artifacts into that aggregate
+   and preserves all basis references and limitations.  Duplicate or
+   conflicting aggregate findings are fatal and produce
+   E_PROFILE_MAPPING_INVALID.
+
+   A boundary finding with status = supported MUST contain ceiling_base.
+   Its absence is a profile-mapping failure and produces
+   E_PROFILE_MAPPING_INVALID.  A supported boundary has a grounding
+   value of asserted-only, attributed, or attested that the evaluation
+   context accepts. grounding = not-evaluated is valid only with status
+   = not-evaluated; either field paired differently produces
+   E_PROFILE_MAPPING_INVALID.  When boundary status is unsupported or
+   not-evaluated, a present ceiling_base is diagnostic carrier metadata
+   only and is ignored by the Core algorithm.
+
+   A PROV aggregate is valid only when qualified_base = execution and
+   independence_validation = not-applicable.  An IV aggregate is valid
+   only when qualified_base is one of the four content bases and
+   independence_validation is supported, unsupported, or not-evaluated.
+   PROV on another base, IV with not-applicable, or another recognized
+   but disallowed qualifier-field combination produces
+   E_PROFILE_MAPPING_INVALID.  An unknown closed-enum member or wrong
+   logical type is malformed.  A mapper does not delete or repair an
+   invalid qualifier aggregate.  A valid qualifier contributes support
+   only when its exact qualified base is independently in B.
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 13]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   counter_evidence is an entry set, not a single strongest status.
+   When no counter-evidence was supplied it contains exactly one not-
+   supplied entry with empty affected claims, basis references, reasons,
+   and limitations.  Otherwise not-supplied is absent and every entry
+   names at least one admissible affected claim or all-admissible-
+   claims. not-evaluated means supplied counter-evidence could not be
+   assessed; resolved-no-defeat means it was assessed and does not
+   defeat the named claims; unresolved-material means it is material but
+   unresolved; and defeating means it affirmatively defeats the named
+   claims.  When the affected claims cannot be narrowed safely,
+   affected_claims is all-admissible-claims.  Entries with different
+   affected-claim sets or statuses MUST NOT be collapsed into one
+   status.
+
+   Every member of a counter entry's reasons set MUST be a token
+   registered in the substantive category by a registry applicable to
+   the mapping profile and MUST apply to that entry's affected claims.
+   Fatal tokens are carried in fatal_conditions, and evaluation-gap
+   tokens are carried in profile_evaluation_gaps; they MUST NOT appear
+   in counter_evidence[].reasons.  A non-Core token resolves uniquely,
+   including category, through exactly one immutable registry revision
+   identified by an applied profile_identifier; absence, ambiguity, or
+   category disagreement produces E_PROFILE_MAPPING_INVALID.  Entry
+   reasons are explanatory and do not change the entry status or block a
+   claim by themselves.  Core-derived counter-status tokens are emitted
+   in addition to, not instead of, applicable entry reasons.
+
+   Likewise, every token in reasons[] on a boundary, base, or qualifier
+   finding MUST be registered in the substantive category and apply to
+   that finding.  A non-Core token resolves uniquely through an
+   immutable registry revision identified by an applied
+   profile_identifier.  Fatal tokens belong in fatal_conditions, and
+   evaluation-gap tokens belong in profile_evaluation_gaps.  An absent,
+   ambiguous, unregistered, or miscategorized finding reason is a
+   profile-mapping failure and produces E_PROFILE_MAPPING_INVALID.
+
+   Every member of fatal_conditions MUST be a token registered in the
+   fatal category by the Core registry or a registry applicable to the
+   mapping profile.  Core tokens are bound to the semantics_version;
+   every non-Core token resolves uniquely through an immutable registry
+   revision identified by an applied profile_identifier.  An absent,
+   ambiguous, unregistered, or miscategorized member is a profile-
+   mapping failure; the appraiser returns E_PROFILE_MAPPING_INVALID
+   instead of treating that member as fatal.
+
+   profile_evaluation_gaps carries structured gaps supplied by a mapping
+   or composition profile that are not otherwise recoverable from a Core
+   finding status.  Every entry is scoped to the exact target and
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 14]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   evaluation context and contains a token registered in the evaluation-
+   gap category, at least one admissible affected claim or all-
+   admissible-claims, basis references, and limitations.  A non-Core
+   token resolves uniquely through an immutable registry revision
+   identified by an applied profile_identifier.  The optional
+   current_scope_capability is present only when the entry represents
+   the current appraiser's unperformed authenticity or composition
+   assessment; it names exactly that initial capability.  The token
+   registration also identifies that same capability:
+   E_COMPOSITION_NOT_EVALUATED is initially registered for composition,
+   while authenticity requires an exact profile token registered for
+   authenticity assessment.  A profile can register another evaluation-
+   gap token for either capability.  A marker-token capability mismatch
+   produces E_PROFILE_MAPPING_INVALID.  Absence of the marker means that
+   the entry is inherited or otherwise diagnostic and does not determine
+   a current capability status.  A composition profile uses this field
+   to preserve applicable upstream gaps after remapping them to the
+   exact chain target.  An entry with an empty affected-claim set, an
+   absent, ambiguous, unregistered, or non-evaluation-gap token binding,
+   an incorrect target or evaluation-context scope, an invalid current-
+   scope marker, or malformed basis references or limitations is a
+   profile-mapping failure.  A valid entry whose affected claims include
+   neither the asserted claim nor a member of SupportedClaims is
+   unrelated to this appraisal and is not projected.
+
+6.1.  Logical Types, Identity, and Equality
+
+   The abstract contract uses logical values, not carrier encodings.
+   Content bases, qualifiers, statuses, grounding classes, verdicts, and
+   the initial evaluation-scope names are closed enumerations whose
+   members compare by the exact names defined in this document.  A typed
+   claim compares as the ordered pair of its base and its mathematical
+   qualifier set.
+
+   The target, evaluation-context identifier, evaluation time, and trust
+   configuration are opaque logical atoms.  An applied
+   profile_identifier is an immutable specification-and-revision
+   identity, not a floating profile name.  It identifies the profile-
+   defined equality rules and the exact reason-registry revisions used
+   by that profile.  A basis reference or limitation is a profile-scoped
+   atom logically equivalent to the pair (profile_identifier,
+   local_value).  Before invoking Core, the mapper normalizes every
+   profile-defined atom into the stable comparison value defined by that
+   immutable profile revision.  Core does not interpret an opaque atom;
+   it only compares, copies, and set-unions it using that equality.
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 15]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   Every collection described as a set, including qualifier, profile-
+   identifier, basis-reference, reason, limitation, fatal-condition,
+   affected-claim, supported-claim, and maximal-claim collections, is an
+   unordered mathematical set.  Equal members occur once.  A carrier
+   representation either normalizes repeated representations of an equal
+   set member before Core invocation or rejects them under its own
+   mapping rules.  The aggregate and entry collections are unordered
+   sets keyed by the complete keys defined in this document.  Two
+   aggregate entries with the same aggregate key are the duplicate
+   condition in this section, even if every field is byte-identical.
+
+   A recorder relation is the logical record shown in Section 6.  Its
+   profile_identifier binds the immutable relation vocabulary;
+   relation_token names one member of that vocabulary; subject_ref and
+   object_ref are profile-scoped atoms; and its basis references and
+   limitations use the equality above.  Recorder relations are
+   descriptive carried facts.  Their presence does not create a content-
+   base or qualifier finding.  Two recorder relations are equal only
+   when all six logical components are equal, and composition unions
+   them under that equality.
+
+   These equality rules govern aggregate uniqueness, structural
+   comparison, support-entry premise unions, inherited-limitations
+   unions, composition, and Core equivalence.  A profile cannot
+   substitute serialization equality, display equality, or byte equality
+   for the bound logical equality unless its immutable revision
+   explicitly defines those values to be identical.
+
+6.2.  Core Ingress, Validity Classes, and Fatal Precedence
+
+   Core receives one complete logical AppraisalInput.  Carrier parsing,
+   carrier authentication, carrier critical-extension processing, and
+   construction of the logical input occur upstream.  When an upstream
+   failure prevents construction of a complete input, there is no Core
+   result.  A carrier or profile can report its own diagnostic alongside
+   that outcome, but it does not synthesize a partial Core appraisal or
+   translate a carrier error into a Core reason token.
+
+   The Core rejection checks are ordered and mutually classified as
+   follows:
+
+   1.  If the outer value is not an input record, or semantics_version
+       is absent or is not a text atom, Core returns
+       E_MALFORMED_NORMALIZED_INPUT.
+
+   2.  If that readable value is not wexp-core-1, Core returns
+       E_UNSUPPORTED_SEMANTICS_VERSION without applying the version-
+       specific member rules below.
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 16]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   3.  For wexp-core-1, a missing required member, unknown member, wrong
+       logical type, unknown closed-enum value, or malformed set, entry,
+       claim, token, or recorder relation returns
+       E_MALFORMED_NORMALIZED_INPUT.
+
+   4.  A well-typed wexp-core-1 input that violates a cross-field
+       invariant returns E_PROFILE_MAPPING_INVALID.  Cross-field
+       invariants include aggregate cardinality and keys, exact target
+       and context scope, the counter-evidence sentinel, qualifier
+       combinations, conditional ceiling_base, evaluation-scope
+       consistency and extension-key binding, and profile or registry
+       identity and token category.
+
+   5.  If the structurally usable input has a non-empty valid
+       fatal_conditions set, Core returns that complete set through the
+       fixed rejection projection.
+
+   6.  Otherwise an inadmissible asserted claim returns
+       E_CLAIM_OUT_OF_DOMAIN.
+
+   E_MALFORMED_NORMALIZED_INPUT, E_UNSUPPORTED_SEMANTICS_VERSION,
+   E_PROFILE_MAPPING_INVALID, and E_CLAIM_OUT_OF_DOMAIN are derived only
+   by the ordered Core checks and are invalid as supplied members of
+   fatal_conditions.  The Core-defined supplied fatal members are
+   E_UNKNOWN_CRITICAL_SEMANTIC, E_INTEGRITY_INVALID, E_BINDING_MISMATCH,
+   and E_CHAIN_DESCRIPTION_INVALID.  An immutable applied profile can
+   additionally register supplied fatal tokens.  If any supplied member
+   is appraiser-derived, unbound, ambiguous, or in the wrong category,
+   the cross-field check returns only E_PROFILE_MAPPING_INVALID.
+
+   A supplied E_INTEGRITY_INVALID means that an integrity or
+   authentication failure affecting normalized interpretation was
+   identified while enough structurally usable logical input remains to
+   report that Core condition.  A supplied E_BINDING_MISMATCH means
+   protected fields or mandatory mapping bindings are internally
+   contradictory while the same minimum remains available.  Ordinary
+   negative or unevaluated exact-target binding is represented by a
+   correctly scoped aggregate and is non-fatal.  A supplied
+   E_UNKNOWN_CRITICAL_SEMANTIC means an unrecognized critical Core or
+   applied mapping-profile semantic can affect normalized interpretation
+   and cannot safely be ignored.  It does not mean an unknown carrier
+   extension, and it is not an alias for a carrier-specific error.
+   E_CHAIN_DESCRIPTION_INVALID has the analogous meaning for a
+   structurally usable input produced by an applied composition profile.
+
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 17]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   Multiple valid supplied fatal members are returned together as a set.
+   No later check or diagnostic is added after any earlier rejection
+   branch wins.  The fixed projection in Section 8.4 is the only Core
+   result for every rejection branch.
+
+7.  Boundary Ceiling
+
+   For every supported claim (b, A), b MUST NOT exceed the accepted
+   boundary_finding.ceiling_base.  Qualifiers do not alter this
+   comparison.
+
+   supported_content_base <= accepted_boundary_ceiling
+
+   The Boundary Ceiling is an exclusion rule, not an evidence source.  A
+   boundary finding can prevent a base from being supported; it MUST NOT
+   create a positive base finding.  Observation itself requires a
+   positive exact observation finding.
+
+   The result MUST preserve the boundary grounding status and its
+   limitations.  A string or structural descriptor asserted by a
+   producer is at most asserted-only; a valid signature associated with
+   an accepted identity can make it attributed; and an applicable
+   boundary-grounding profile can make it attested.  Attribution is not
+   proof of actual boundary control.
+
+   boundary_finding.status = supported means that the boundary predicate
+   required by the named evaluation context passed.  The evaluation
+   context MUST identify the minimum acceptable grounding.  A profile
+   MUST NOT mark a boundary supported merely because a boundary name or
+   descriptor is present.  An asserted-only or attributed finding can be
+   supported only when the evaluation context explicitly accepts that
+   grounding class; the result still reports the weaker grounding and
+   its limitations.
+
+   The boundary status has deterministic precedence.  When status = not-
+   evaluated, no base is added and the appraiser records
+   E_BOUNDARY_NOT_EVALUATED.  When status = unsupported, no base is
+   added and it records E_BOUNDARY_NOT_SUPPORTED.  Only status =
+   supported with target_binding = supported and matching target and
+   context makes ceiling_base usable.  A failed or unevaluated target
+   binding prevents use of the ceiling and adds the corresponding
+   profile reason or gap.
+
+8.  Appraisal Procedure
+
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 18]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+8.1.  Supported Claim Set
+
+   Let B be the set of exact supported bases.  A base b is in B if and
+   only if all of the following hold:
+
+   1.  the unique aggregate base finding for b has supported target
+       binding and supported semantic validation;
+
+   2.  the finding names the same target and evaluation context as the
+       appraisal input;
+
+   3.  the boundary finding is supported, target-bound, and scoped to
+       that same target and context; and
+
+   4.  the accepted Boundary Ceiling is at least b.
+
+   For each b in B, let Q(b) contain:
+
+   *  PROV only when b is execution and a PROV finding for execution has
+      target_binding = supported and semantic_validation = supported for
+      the exact target and evaluation context; and
+
+   *  IV only when an IV finding for b has target_binding = supported,
+      semantic_validation = supported, and independence_validation =
+      supported for the exact target and evaluation context.
+
+   The supported claim set is:
+
+   SupportedClaims = {
+     (b, A) | b is in B, A is a subset of Q(b),
+              and (PROV in A implies b == execution)
+   }
+
+   The procedure evaluates all findings independently of the asserted
+   claim.  It does not restrict B or Q(b) to the asserted base or
+   qualifiers.
+
+   MaximalSupportedClaims is the set of members of SupportedClaims that
+   are not structurally dominated by another member under Section 4.5.
+   The complete supported set remains authoritative because maximal
+   claims do not encode exact support for bases they structurally
+   dominate.
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 19]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   For every member of SupportedClaims, the appraiser also produces a
+   support entry containing the exact claim, the union of basis
+   references used for its base, boundary, and qualifiers, and the
+   limitations attached to those same premises.  Limitations from failed
+   or unrelated findings are not attached to that support entry, but
+   remain available as evaluation diagnostics where applicable.
+
+   The result's inherited_limitations is the set union of the input's
+   inherited limitations; limitations from each counter-evidence or
+   profile-gap entry whose affected claims include the asserted claim, a
+   member of SupportedClaims, or all-admissible-claims; boundary
+   limitations; every support-entry limitation; and limitations attached
+   to findings that determine a reason or gap for the asserted claim.
+   Limitations on unrelated failed findings are excluded.  This rule,
+   not implementation policy, determines which limitations are
+   applicable.
+
+8.2.  Verdict
+
+   A conforming Core appraiser MUST return exactly one of accept,
+   downgrade, or reject.
+
+   reject  The normalized input cannot be safely interpreted, a fatal
+      condition is present, unknown critical semantics affect the
+      result, or the asserted claim is outside the admissible domain.
+
+   accept  The asserted claim is an exact member of SupportedClaims and
+      counter-evidence does not block that exact claim.
+
+   downgrade  The input is safely interpretable and the asserted claim
+      is admissible, but it is not exactly supported, or counter-
+      evidence blocks acceptance.
+
+   downgrade means "valid but unsupported as claimed".  It does not
+   imply that every supported alternative is structurally below the
+   asserted claim.  An alternative can be below, above, or incomparable.
+
+   Counter-evidence blocks a claim when at least one entry has status
+   not-evaluated, unresolved-material, or defeating and that entry's
+   affected_claims contains the claim or all-admissible-claims. not-
+   supplied and resolved-no-defeat entries do not block by themselves.
+   The reason token is derived from each applicable blocking entry; a
+   defeating entry for one claim never changes the status of a separate
+   not-evaluated entry for another claim.
+
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 20]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+8.3.  Support Relation
+
+   For each maximal supported claim, the appraisal reports a pair
+   {supported_claim, relation}, where relation is one of equal, support-
+   below-claim, support-above-claim, or incomparable.  If no claim is
+   supported, the relation array is empty.
+
+   Informatively: a downgrade result means that the level originally
+   claimed is not supported as claimed, while some lower or incomparable
+   claim may still be supported.  This sentence explains the term and
+   introduces no second verdict.
+
+   The separate Boolean asserted_claim_supported reports exact
+   membership in SupportedClaims.  It remains true when the exact
+   asserted claim is supported but a structurally deeper alternative
+   causes the asserted claim not to appear in MaximalSupportedClaims.
+
+   The relation is explanatory.  It MUST NOT replace the exact
+   membership test used for accept.
+
+8.4.  Normative Algorithm
+
+   appraise(input):
+     if input is not a logical record or
+        semantics_version is absent or not a text atom:
+         return rejected_result(E_MALFORMED_NORMALIZED_INPUT)
+     if input.semantics_version != "wexp-core-1":
+         return rejected_result(E_UNSUPPORTED_SEMANTICS_VERSION)
+     if any required wexp-core-1 member, closed enum, logical type,
+        set, entry, claim, token, or recorder relation is malformed:
+         return rejected_result(E_MALFORMED_NORMALIZED_INPUT)
+     if any cross-field invariant enumerated in input-validity fails:
+         return rejected_result(E_PROFILE_MAPPING_INVALID)
+     if input.fatal_conditions is not empty:
+         return rejected_result(input.fatal_conditions)
+     if input.asserted_claim is outside the admissible domain:
+         return rejected_result(E_CLAIM_OUT_OF_DOMAIN)
+
+     B = {}
+     SupportEntries = {}
+     for every base finding f, independently of the asserted claim:
+         if f.target == input.target and
+            f.evaluation_context_ref == input.evaluation_context.id and
+            f.target_binding == supported and
+            f.semantic_validation == supported and
+            input.boundary_finding.status == supported and
+            input.boundary_finding.target == input.target and
+            input.boundary_finding.evaluation_context_ref ==
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 21]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+                input.evaluation_context.id and
+            input.boundary_finding.target_binding == supported and
+            f.base <= input.boundary_finding.ceiling_base:
+             add f.base to B
+
+     SupportedClaims = {}
+     for b in B:
+         Q = {}
+         if b == execution and
+            valid_PROV_finding(input.target, b,
+                               input.evaluation_context.id):
+             add PROV to Q
+         if valid_IV_finding(input.target, b,
+                             input.evaluation_context.id):
+             add IV to Q
+         for every admissible (b, A), A subset of Q:
+             add (b, A) to SupportedClaims
+             add support_entry((b, A), exact premises, basis,
+                               limitations)
+                 to SupportEntries
+
+     MaximalSupportedClaims = maximal members of SupportedClaims
+     asserted_claim_supported = input.asserted_claim in SupportedClaims
+     fatal_reasons = {}
+     reasons = {}
+     GapEntries = {}
+
+     for every row of the claim-required diagnostic matrix:
+         if that row's exact predicate is true:
+             if the row is substantive:
+                 add its token to reasons
+             else:
+                 add its exact Core gap entry to GapEntries
+
+     for every boundary, base, or qualifier finding that is the
+         asserted role or an exact premise of a SupportEntry:
+         add its registered substantive reasons to reasons
+
+     for every profile gap entry whose affected claims include
+         the asserted claim, a member of SupportedClaims, or
+         all-admissible-claims:
+         add that exact entry to GapEntries
+
+     for c in applicable_counter_entries(
+            input.counter_evidence, input.asserted_claim):
+         reasons = reasons union c.reasons
+         if c.status == not-evaluated:
+             add gap_entry(E_COUNTER_EVIDENCE_NOT_EVALUATED,
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 22]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+                           input.target, input.evaluation_context.id,
+                           c.affected_claims,
+                           c.basis_refs, c.limitations)
+                 to GapEntries
+         if c.status == unresolved-material:
+             add E_COUNTER_EVIDENCE_UNRESOLVED to reasons
+         if c.status == defeating:
+             add E_COUNTER_EVIDENCE_DEFEATING to reasons
+
+     gaps = token projection of GapEntries
+     limitations = the applicable union defined in supported-claims
+
+     if asserted_claim_supported and not counter_blocks(
+            input.counter_evidence, input.asserted_claim):
+         verdict = accept
+     else:
+         verdict = downgrade
+
+     return Appraisal with every required component
+
+   rejected_result(fatal_tokens):
+     return Appraisal with verdict = reject,
+            semantics_version = "wexp-core-1",
+            fatal_reasons = fatal_tokens,
+            substantive_reasons = {}, evaluation_gaps = {},
+            evaluation_gap_entries = {},
+            supported_claims = {}, maximal_supported_claims = {},
+            support_entries = {}, support_relations = {},
+            asserted_claim_supported = false,
+            boundary_ceiling = unavailable,
+            boundary_grounding = unavailable,
+            target = unavailable, asserted_claim = unavailable,
+            recorder_relations = unavailable,
+            counter_evidence = unavailable,
+            inherited_limitations = unavailable,
+            evaluation_context = unavailable,
+            evaluation_scope = unavailable
+
+   valid_PROV_finding requires the exact PROV conditions in Section 8.1.
+   valid_IV_finding requires the exact IV conditions there, including
+   supported independence validation. counter_blocks applies the per-
+   entry predicate in Section 8.2. applicable_counter_entries returns
+   only entries whose affected claims include the asserted claim or all-
+   admissible-claims and whose status blocks that claim under the same
+   predicate; it preserves per-entry scope.  For every such entry, all
+   registered substantive tokens in c.reasons are added to
+   substantive_reasons; those tokens do not independently alter
+   counter_blocks or the verdict.  The claim-required diagnostic matrix
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 23]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   in Section 8.6 is exhaustive: Core emits no other status-derived
+   substantive token or Core gap entry.  Profile gap entries are already
+   validated by the cross-field check and are copied exactly only under
+   the affected-claim predicate shown above.  A composition profile
+   remaps inherited premise gaps to affected exact chain claims before
+   invoking Core; there is no unscoped inheritance exception.
+
+   Every Core-derived finding gap entry has the row's token, the input
+   target and evaluation-context identifier,
+   affected_claims={input.asserted_claim}, and the basis-reference and
+   limitation sets of the aggregate that made the row true.  If the row
+   concerns an absent aggregate, those two sets are empty.  A counter-
+   derived gap entry instead retains that counter entry's exact affected
+   claims, basis references, and limitations.  Two equal gap entries
+   collapse under the logical equality in Section 6.1; entries that
+   differ in any component remain separate.  Substantive reason tokens
+   are a set, so simultaneous causes of the same token produce one token
+   without suppressing any distinct token.
+
+   Set and token ordering in a serialized result is defined by the
+   result carrier.  The logical sets produced by Core are order-
+   independent.  Given identical normalized input, a conforming
+   implementation MUST produce identical values for every required
+   logical result component, including support and gap entries, verdict,
+   reasons, counter-evidence entries, and inherited limitations.
+
+8.5.  Required Appraisal Result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 24]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   Appraisal = {
+     semantics_version,
+     verdict,
+     fatal_reasons[],
+     target,
+     asserted_claim,
+     asserted_claim_supported,
+     support_entries[],
+     supported_claims,
+     maximal_supported_claims,
+     support_relations,
+     boundary_ceiling,
+     boundary_grounding,
+     recorder_relations[],
+     substantive_reasons[],
+     evaluation_gaps[],
+     evaluation_gap_entries[],
+     counter_evidence[],
+     inherited_limitations[],
+     evaluation_context,
+     evaluation_scope
+   }
+
+   Every component shown above is REQUIRED; arrays and sets are empty
+   when they have no members. fatal_reasons is non-empty if and only if
+   the verdict is reject.  Each support entry contains claim,
+   basis_refs[], and limitations[].  Each support relation contains
+   supported_claim and relation.  Each evaluation-gap entry contains
+   token, target and context scope, affected claims, basis references,
+   limitations, and the optional current_scope_capability supplied on a
+   profile gap; evaluation_gaps is its set-valued token projection.
+   counter_evidence preserves every status, affected-claim set, basis-
+   reference set, reason set, and limitation set from the normalized
+   input without cross-claim status or reason collapse.  There is no
+   normative singular verified_state.  A presentation profile can select
+   a display state, but that projection MUST NOT replace the supported
+   claim set.
+
+   For an accept or downgrade result, boundary_ceiling is the accepted
+   ceiling only when the boundary finding, its target binding, target,
+   and context all pass; otherwise it is unavailable. boundary_grounding
+   preserves the input grounding even when the boundary is unsupported.
+
+   A reject result uses the fixed projection in Section 8.4.  Its
+   semantics_version identifies this result contract; all input-derived
+   appraisal components are unavailable, and all derived support,
+   relation, substantive-reason, and gap sets are empty.  Carrier or
+   profile diagnostics can be reported alongside the Core result, but
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 25]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   MUST NOT be inserted as a partial appraisal.  This fixed projection
+   prevents two implementations from exposing different subsets of an
+   input that Core rejected.
+
+8.6.  Substantive Reasons and Evaluation Gaps
+
+   Substantive reasons describe why evidence does not support the
+   asserted claim.  Evaluation gaps describe assessments that were not
+   performed.  The two categories MUST remain distinguishable.
+
+   The ordered rejection checks and supplied-fatal meanings are defined
+   in Section 6.2.  They run before this section.  A safely interpreted
+   artifact whose evaluated semantics merely do not bind or cover the
+   asserted target or base uses a correctly scoped non-passing aggregate
+   and E_EVIDENCE_NOT_BOUND or E_EVIDENCE_COVERAGE_MISMATCH; it remains
+   non-fatal.  A profile MUST NOT turn ordinary lack of exact support
+   into a fatal error.
+
+   The following claim-required matrix is exhaustive for Core-derived
+   non-fatal diagnostics.  After the rejection checks, every row is
+   evaluated independently.  An absent aggregate triggers only its
+   absence row; status rows require that aggregate to be present.  A
+   boundary-exceeded row requires a usable boundary and a present
+   asserted-base aggregate whose base is deeper than the ceiling.
+   Consequently a present supported base excluded by the ceiling
+   produces E_BASE_EXCEEDS_BOUNDARY, not E_MISSING_REQUIRED_EVIDENCE.
+   All simultaneously applicable distinct tokens are emitted.  No
+   condition outside this matrix creates a Core-derived non-fatal token.
+
+   E_BOUNDARY_NOT_SUPPORTED (substantive)  Boundary status =
+      unsupported; source: boundary finding.
+   E_BOUNDARY_NOT_EVALUATED (gap)  Boundary status = not-evaluated;
+      source: boundary finding.
+   E_EVIDENCE_NOT_BOUND (substantive)  Boundary target_binding =
+      unsupported; source: boundary finding.
+   E_BOUNDARY_NOT_EVALUATED (gap)  Boundary target_binding = not-
+      evaluated; source: boundary finding.
+   E_BASE_EXCEEDS_BOUNDARY (substantive)  Usable boundary with asserted
+      base deeper than its ceiling; sources: boundary and asserted-base
+      findings.
+   E_MISSING_REQUIRED_EVIDENCE (substantive)  Asserted-base aggregate
+      absent; source: none.
+   E_EVIDENCE_NOT_BOUND (substantive)  Asserted-base target_binding =
+      unsupported; source: asserted-base finding.
+   E_BASE_NOT_EVALUATED (gap)  Asserted-base target_binding = not-
+      evaluated; source: asserted-base finding.
+   E_EXACT_CLAIM_NOT_SUPPORTED (substantive)  Asserted-base
+      semantic_validation = unsupported; source: asserted-base finding.
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 26]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   E_BASE_NOT_EVALUATED (gap)  Asserted-base semantic_validation = not-
+      evaluated; source: asserted-base finding.
+   E_MISSING_REQUIRED_EVIDENCE (substantive)  Asserted PROV aggregate
+      absent; source: none.
+   E_EVIDENCE_NOT_BOUND (substantive)  Asserted PROV target_binding =
+      unsupported; source: PROV finding.
+   E_PROV_NOT_EVALUATED (gap)  Asserted PROV target-binding or semantic
+      assessment not-evaluated; source: PROV finding.
+   E_PROV_NOT_SUPPORTED (substantive)  Asserted PROV semantic_validation
+      = unsupported; source: PROV finding.
+   E_MISSING_REQUIRED_EVIDENCE (substantive)  Asserted IV aggregate
+      absent; source: none.
+   E_EVIDENCE_NOT_BOUND (substantive)  Asserted IV target_binding =
+      unsupported; source: IV finding.
+   E_IV_NOT_EVALUATED (gap)  Asserted IV target-binding, semantic, or
+      independence assessment not-evaluated; source: IV finding.
+   E_IV_NOT_SUPPORTED (substantive)  Asserted IV semantic_validation =
+      unsupported; source: IV finding.
+   E_INDEPENDENCE_NOT_ESTABLISHED (substantive)  Asserted IV
+      independence_validation = unsupported; source: IV finding.
+   E_COUNTER_EVIDENCE_NOT_EVALUATED (gap)  Applicable counter entry
+      status = not-evaluated; source: that counter entry.
+   E_COUNTER_EVIDENCE_UNRESOLVED (substantive)  Applicable counter entry
+      status = unresolved-material; source: that counter entry.
+   E_COUNTER_EVIDENCE_DEFEATING (substantive)  Applicable counter entry
+      status = defeating; source: that counter entry.
+
+   For every blocking counter-evidence entry applicable to the asserted
+   claim, the appraiser MUST add every token in that entry's reasons set
+   to substantive_reasons, in addition to the Core token determined by
+   the entry status.  Reasons on entries that do not affect the asserted
+   claim do not enter that projection but remain preserved in the result
+   entry.
+
+   A profile can add more specific registered tokens.  It MUST NOT
+   suppress a Core-required token.  A finding reason is projected only
+   from the boundary when it determines the asserted claim or a reported
+   support entry, from an asserted-base or asserted-qualifier finding,
+   or from a finding that is an exact premise of a reported support
+   entry.  E_EVIDENCE_COVERAGE_MISMATCH, E_CHAIN_UNBOUND, and
+   E_COMPOSITION_WARRANT_MISSING use this profile-reason path on a
+   correctly scoped exact-role aggregate.  Profile-supplied gap entries,
+   including E_COMPOSITION_NOT_EVALUATED, are included only when their
+   affected claims contain the asserted claim, a member of
+   SupportedClaims, or all-admissible-claims.  A supplied profile gap
+   does not by itself block acceptance.  A composition profile remaps
+   inherited premise diagnostics to affected exact chain claims before
+   Core invocation; unrelated diagnostics do not change the logical
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 27]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   reason or gap set.  For counter-evidence entry reasons, the stricter
+   blocking-and-asserted-claim projection rule in the preceding
+   paragraph applies.
+
+9.  Composition
+
+   Composition-profile mapping and Core appraisal are separate
+   conformance surfaces.  Core consumes only an ordinary normalized
+   input for the exact chain target; it does not consume raw segments,
+   adjacency records, or warrants and does not infer a chain finding.  A
+   Core appraiser can implement the complete Core procedure without
+   implementing a composition profile.  An implementation that
+   separately claims composition-profile conformance identifies the
+   immutable composition-profile revision and satisfies the additional
+   mapping obligations in this section.
+
+   A chain claim MUST NOT be derived by numeric minimum, by a display
+   label, or by a meet of segment states alone.  A composition profile
+   MUST identify:
+
+   *  the exact chain target;
+
+   *  the exact segment claims used as premises;
+
+   *  the validated adjacency bindings;
+
+   *  the composition warrant mapping those premises to the chain claim;
+      and
+
+   *  the evaluation context shared by the premises; and
+
+   *  the independence of the independent-verification roots relied on
+      by the premises.
+
+   The identified composition-profile revision defines the logical types
+   and predicates for premises, adjacency bindings, warrants, their
+   exact identity, and their target and context equality.  The profile
+   evaluates those values and emits ordinary normalized base and
+   qualifier findings for the exact chain target.  The ordinary Core
+   algorithm then appraises those findings; composition is not a second
+   Core appraisal algorithm.
+
+   A chain base finding is supported only if every named premise is
+   exactly supported and every required binding and warrant evaluates to
+   supported under that immutable profile.  An absent or unsupported
+   required adjacency binding produces no positive chain finding; the
+   profile places substantive E_CHAIN_UNBOUND on the correctly scoped
+   non-passing chain-role aggregate.  It does the same with
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 28]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   E_COMPOSITION_WARRANT_MISSING for an absent or unsupported warrant.
+   Where two premises rely on the same independent-verification root,
+   that root is not independent for the purposes of this warrant, and
+   the profile places substantive E_SHARED_VERIFICATION_ROOT on the
+   correctly scoped non-passing chain-role aggregate.  Correctness of
+   the composition operator is not itself a warrant; the warrant
+   consists of the binding, the coverage of the inter-segment link, and
+   the independence of the verification roots.  A required assessment
+   that was not performed is represented by a structured
+   E_COMPOSITION_NOT_EVALUATED profile-gap entry affecting the exact
+   chain claim.  These are safely interpretable support failures and
+   lead to downgrade when the chain claim is not otherwise supported.
+   If a malformed or internally contradictory chain description still
+   permits a structurally usable Core input, the profile supplies fatal
+   E_CHAIN_DESCRIPTION_INVALID; otherwise the upstream failure produces
+   no Core appraisal under Section 6.2.  Individual segment appraisals
+   are unaffected.
+
+   An inherited PROV qualifier requires exact PROV support for every
+   required segment plus provenance coverage of every required inter-
+   segment binding.  An inherited IV qualifier requires exact IV support
+   at the relevant base for every required segment, covered chain
+   bindings, and a passing chain independence assessment.
+   Alternatively, a profile can establish a new chain-level PROV or IV
+   qualifier from a separate exact chain-level finding and explicit
+   warrant; that finding is evaluated by the ordinary qualifier rules
+   and cannot be inferred from segment depth alone.
+
+   A composed input MUST inherit the set union of recorder relations and
+   of unresolved limitations, freshness and revocation limits, coverage
+   limits, and trust-context restrictions of its premises unless a named
+   warrant explicitly resolves a specific item.  Applicable upstream
+   evaluation gaps are remapped to the exact chain target and affected
+   chain claims and carried as structured profile_evaluation_gaps
+   entries with their original basis references and limitations.  A
+   warrant that resolves a gap names the exact entry and records the
+   resolving basis; it cannot silently delete all gaps of the same
+   token.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 29]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   Counter-evidence entries from all premises and chain-level findings
+   are retained separately.  Entries can be coalesced only when status
+   and affected-claim set are identical; their basis references,
+   reasons, and limitations are then set-unioned.  Statuses, affected-
+   claim sets, or reason sets across different scopes MUST NOT be
+   collapsed or promoted by precedence.  If any evaluator cannot narrow
+   affected claims safely, that entry uses all-admissible-claims.  The
+   composed set contains one not-supplied entry only when every premise
+   and chain-level input reports not-supplied; otherwise all such
+   sentinel entries are omitted.
+
+   A chain claim and a terminal-action claim are distinct.  Support for
+   a chain does not establish completion, terminal effect, or goal
+   satisfaction.  A terminal-action claim uses the terminal segment's
+   exact support plus a validated binding to the selected terminal
+   action.
+
+   The Core conformance evidence in Section 12 covers only the appraisal
+   of normalized composition outputs unless a separate composition-
+   profile claim is declared.  The C11 and C12 fixtures in Section 13
+   assume that an identified external composition profile has already
+   emitted the stated ordinary finding.  They test Core support
+   construction and limitation carry-through, not premise discovery,
+   adjacency validation, warrant evaluation, or composition-profile
+   conformance.
+
+10.  Non-Inference and Coverage Rules
+
+   The limits in this section are an application of an invariant this
+   protocol inherits rather than states.  Quoting [WCC-CORE], part 4:
+   "No transition, inference, transformation, aggregation, or
+   composition may increase the Support Envelope without an explicit
+   warrant and any additional premises or basis required by that
+   warrant."  Every downstream result inherits the relevant limitations
+   of upstream materials and arguments unless those limitations are
+   explicitly resolved.  This document does not introduce that rule and
+   claims no novelty for it; the material below that derives from it is
+   cited, not restated.  The composition warrant of Section 9 is this
+   document's operational form of the warrant named in the quoted
+   invariant.
+
+   The corresponding rule of this document is stated over claim
+   strength: no transition, inference, transformation, aggregation, or
+   composition may increase the strength of a supported claim without an
+   explicit warrant and the premises that warrant requires.  This
+   document inherits the quoted invariant by intent and not by identity
+   of objects; Support Envelope is not defined here, and remains the
+   object of [WCC-CORE].
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 30]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   Provenance of this section: the W-I7 material here is a byte-exact,
+   attributed quotation from [WCC-CORE] (SHA-256 382e3986…), which was
+   demonstrably in hand when this section was authored.  The underlying
+   non-inflation principle appeared in the WEXP line —
+   [I-D.sergeev-wexp-core-00], submitted 2026-07-05/06 — before the
+   earliest provable carrier of the W-I7 twelve-pair formulation
+   (2026-07-23); no WEXP text reproduces W-I7 wording other than as an
+   attributed quotation.
+
+   The inherited invariant lands together with its third part, Preserved
+   Incomparability, and not alone: a total order over typed states is
+   not presumed, and a projection into one requires justification by the
+   profile that declares it.  A single maximum among supported states is
+   not guaranteed, and monotonicity is not presumed.
+
+   Two boundaries of this landing are stated so that nothing is quietly
+   raised by it.  The Boundary Ceiling of Section 7 is untouched by this
+   section and its status is not elevated by appearing beside an
+   inherited invariant.  The corollary that verifiability does not raise
+   the captured level belongs to a different axis and is not merged with
+   the rule above.
+
+   The following limits are normative:
+
+   *  observation does not imply intent, invocation, or execution;
+
+   *  intent does not imply authority, authorization validity,
+      invocation, or execution;
+
+   *  invocation does not imply execution, completion, or effect;
+
+   *  execution does not imply completion of a larger process, durable
+      external effect, goal satisfaction, correctness, safety, or policy
+      compliance;
+
+   *  a provenance artifact by itself does not establish runtime
+      occurrence; a PROV-qualified WEXP claim presupposes separately
+      established exact execution support, and IV does not imply PROV;
+
+   *  a signature authenticates bytes under a key; it does not establish
+      content truth or boundary control;
+
+   *  a transparency receipt establishes registration or custody; it
+      does not establish PROV, IV, or execution;
+
+   *  presence of records does not establish completeness of coverage;
+
+   *  absence of a record does not establish nonoccurrence;
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 31]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   *  a sole counter_evidence entry with status = not-supplied does not
+      establish absence of counter-evidence; and
+
+   *  aggregation and transformation do not remove upstream limitations
+      unless an explicit warrant resolves them.
+
+11.  Cross-Carrier Equivalence
+
+   Two carrier inputs are Core-equivalent when, under the same semantics
+   version and evaluation context, they normalize under Section 6.1 to
+   equal algorithm-relevant targets, asserted claims, finding statuses,
+   scopes, and reason sets, boundary ceilings and grounding, recorder
+   relations, basis references, profile-gap entries, evaluation scope,
+   limitations, and fatal conditions.  Counter-evidence equivalence
+   includes every entry's status, affected claims, reasons, basis
+   references, and limitations.  Applied profile identifiers and their
+   immutable revisions are part of that equality.
+
+   A conforming Core appraiser MUST return the same complete logical
+   appraisal for Core-equivalent inputs.  Carrier-specific parse,
+   authentication, and transport metadata can differ without affecting
+   Core equivalence only when they do not change a normalized component.
+   Inputs that differ only in opaque basis-reference identifiers are not
+   completely Core-equivalent; when all other normalized components are
+   equal, their appraisals MUST nevertheless be identical except for
+   those carried basis references and any carrier metadata that the
+   result profile explicitly preserves.
+
+12.  Core Conformance and Evaluation Scope
+
+   A full Core-appraiser conformance claim is binary only for an exact
+   declared revision and scope.  The claim record identifies the Core
+   document name and immutable source digest, semantics_version,
+   reviewed Requirements Registry identifier and digest, required
+   vector-package identifier and manifest digest, implementation and
+   runner revisions, and the complete requirement and vector identifier
+   sets in scope.  These identities prevent a Core-00 result, a
+   Snapshot-001 result, or a result from another Core-01 source from
+   being presented as evidence for different bytes.
+
+   For that exact scope, PASS means that the implementation asserts
+   every bound reviewed requirement, every required frozen vector was
+   parsed under its identified non-normative harness, every complete
+   logical appraisal equaled the independently frozen expected
+   appraisal, and the execution recorded zero mismatch, not-run, and
+   blocked cases.  The normative authority remains this specification
+   and its reviewed requirements; vector comparison is evidence, not the
+   source of an expectation.
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 32]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   A full conformance record enumerates all reviewed Core-appraiser
+   requirements and all required vectors for the identified revision.
+   An implementation that supports a smaller surface lists the exact
+   included and omitted requirement and vector identifiers and labels
+   the result PARTIAL; it does not claim full Core conformance.
+   Composition-profile conformance, carrier conformance, and result-
+   carrier conformance are separate claims with separate immutable
+   profile identities.
+
+   PASS is not certification, proof of correctness or completeness,
+   proof of security, evidence of interoperability with an untested
+   implementation or carrier, IETF acceptance, or authority to make
+   policy decisions.  No conformance record changes the specification-
+   to-requirements-to-vectors-to-implementation authority direction.
+
+   evaluation_scope is an unordered map from capability names to exactly
+   one of evaluated or not-evaluated.  The following initial names are
+   closed for wexp-core-1:
+
+   *  carrier-mapping;
+
+   *  authenticity;
+
+   *  target-binding;
+
+   *  boundary-grounding;
+
+   *  observation-support;
+
+   *  intent-support;
+
+   *  invocation-support;
+
+   *  execution-support;
+
+   *  provenance-support;
+
+   *  independent-verification;
+
+   *  composition; and
+
+   *  counter-evidence.
+
+   Every initial name MUST appear exactly once.  An extension key is the
+   logical pair (profile_identifier, local_name), where the immutable
+   applied profile identifier occurs in
+   evaluation_context.profile_identifiers and local_name is a non-empty
+   name in that revision.  The pair is its identity.  Core ignores an
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 33]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   extension status for support and gap derivation but preserves the
+   exact pair and status in the result.  An unbound, malformed,
+   duplicate, or ambiguous extension key produces
+   E_PROFILE_MAPPING_INVALID.
+
+   The scope map is a deterministic summary of the assessments
+   represented by the normalized input. carrier-mapping is evaluated for
+   every complete Core input.  For each finding-backed or counter-
+   evidence capability, evaluated means discovery of applicable material
+   completed and every supplied assessment governed by that capability
+   has a status other than not-evaluated; absence of an aggregate under
+   that value means discovery completed and found no candidate evidence.
+   not-evaluated means at least one applicable governed assessment could
+   not be performed.  When such an assessment is required by the
+   asserted claim, that value is accompanied by the exact role aggregate
+   with its relevant status set to not-evaluated.
+
+   The external authenticity and composition capabilities use a fully
+   syntactic rule: their scope value is not-evaluated if and only if at
+   least one profile-gap entry names that capability in
+   current_scope_capability, and is evaluated if and only if no entry
+   names it.  A marked entry can affect any exact admissible claim; its
+   projection into the result remains governed separately by the
+   affected-claim rule.  Core does not decide from profile-defined trust
+   data whether an external assessment was required.
+
+   The governed status fields are: every finding's target_binding for
+   target-binding; boundary status, binding, and grounding for boundary-
+   grounding; the corresponding base aggregate's binding and semantic
+   status for each base-support capability; PROV binding and semantic
+   status for provenance-support; IV binding, semantic, and independence
+   status for independent-verification; and counter-entry status for
+   counter-evidence.  A scope value of evaluated with a governed not-
+   evaluated status, a required finding-backed not-evaluated capability
+   without its aggregate, a current-scope marker whose capability is not
+   not-evaluated, or an external capability value without the required
+   marker presence or absence violates the cross-field contract and
+   produces E_PROFILE_MAPPING_INVALID.
+
+   A profile_evaluation_gaps entry without current_scope_capability can
+   preserve a gap from an upstream or composed premise under its own
+   exact scope.  Its presence does not change the current appraiser's
+   capability status.  Core determines current-scope consistency only
+   from the explicit optional field and never interprets opaque basis
+   references for that purpose.
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 34]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   An evaluation capability MUST NOT be used as evidence and MUST NOT
+   create or structurally cap a claim.  A role-specific Core gap entry
+   is emitted only by the claim-required matrix when its aggregate is
+   required by the asserted claim.  A valid profile-gap entry is
+   projected under its affected-claim rule.  Otherwise the scope map
+   alone records the unexercised capability and does not become a
+   reason, gap, or substantive finding.
+
+   The cumulative CC0-CC5 scale from draft-sergeev-wexp-core-00 is not
+   part of the Core appraisal algorithm in this revision.  Producer
+   capability declarations and carrier conformance belong to carrier
+   profiles.
+
+13.  Normative Semantic Test Vectors
+
+   C01 through C16 are normative logical cases, not a wire format.  A
+   conformance record binds an executable representation through an
+   exact manifest that identifies the source revision, reviewed
+   requirement and case identifiers, non-normative harness schema,
+   fixture bytes, and frozen expected logical appraisals.  The
+   representation and comparison procedure do not add a Core
+   serialization requirement.  A representation passes a case only when
+   its complete decoded logical input and complete observed appraisal
+   equal the normative input and expectation stated here.
+
+   The logical fixtures below are normative.  Common input values are:
+   semantics_version=wexp-core-1; target T; evaluation-context
+   identifier C; a supported, target-bound, attributed boundary finding
+   for T and C with basis bd and the stated ceiling; empty recorder
+   relations, profile evaluation gaps, inherited limitations, and fatal
+   conditions; counter-evidence consisting of one entry whose status is
+   not-supplied and whose affected-claim, basis-reference, reason, and
+   limitation sets are empty; and every initial evaluation-scope
+   capability set to evaluated.  Every supported base or qualifier
+   finding has target T, context C, supported target binding and
+   semantic validation, empty reasons and limitations, and a basis
+   identifier matching its name.  Supported IV additionally has
+   supported independence validation; PROV uses not-applicable.  A
+   finding not stated in a row is absent.
+
+   P_COUNTER_FAIL is an opaque fixture token assumed to be registered in
+   the substantive category by the fixture's mapping profile.
+
+   In the table, O, I, N, and E mean unqualified observation, intent,
+   invocation, and execution. +P and +V mean PROV and IV.  S is
+   supported_claims, M is maximal_supported_claims, and A is
+   asserted_claim_supported.  For each member of S, support_entries
+   contains exactly one entry whose basis is the union of bd, its base
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 35]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   basis, and any qualifier bases; its limitations are the union of
+   those premises. support_relations contains the displayed relation for
+   each member of M. gaps={} also means evaluation_gap_entries={}. For
+   accept and downgrade rows, fields not varied by a row equal the
+   common input values and carry through to the output.  A reject row
+   instead uses the complete fixed projection in Section 8.4.
+
+   +===+====================+==========================================+
+   |ID |Input override      | Complete varying output                  |
+   +===+====================+==========================================+
+   |C01|Assert I; intent    | S=M={I}; A=true; relations={I:equal};    |
+   |   |finding supported;  | accept; fatal/reasons/gaps={}.           |
+   |   |ceiling intent.     |                                          |
+   +---+--------------------+------------------------------------------+
+   |C02|Assert I; only      | S=M={E}; A=false; relations={E:support-  |
+   |   |execution finding   | above-claim}; downgrade;                 |
+   |   |supported; ceiling  | reasons={E_MISSING_REQUIRED_EVIDENCE};   |
+   |   |execution.          | fatal/gaps={}.                           |
+   +---+--------------------+------------------------------------------+
+   |C03|Assert E+V;         | S={E,E+P}; M={E+P}; A=false;             |
+   |   |execution and PROV  | relations={E+P:incomparable}; downgrade; |
+   |   |findings supported; | reasons={E_MISSING_REQUIRED_EVIDENCE};   |
+   |   |no IV finding;      | fatal/gaps={}.                           |
+   |   |ceiling execution.  |                                          |
+   +---+--------------------+------------------------------------------+
+   |C04|Assert E+P;         | S={E,E+V}; M={E+V}; A=false;             |
+   |   |execution and       | relations={E+V:incomparable}; downgrade; |
+   |   |IV(execution)       | reasons={E_MISSING_REQUIRED_EVIDENCE};   |
+   |   |findings supported; | fatal/gaps={}.                           |
+   |   |no PROV finding;    |                                          |
+   |   |ceiling execution.  |                                          |
+   +---+--------------------+------------------------------------------+
+   |C05|Assert N+V;         | S={N,N+V}; M={N+V}; A=true;              |
+   |   |invocation and      | relations={N+V:equal}; accept;           |
+   |   |IV(invocation)      | fatal/reasons/gaps={}.                   |
+   |   |findings supported; |                                          |
+   |   |ceiling invocation. |                                          |
+   +---+--------------------+------------------------------------------+
+   |C06|Assert E+V;         | S={N,N+V,E}; M={N+V,E}; A=false;         |
+   |   |invocation,         | relations={N+V:support-below-            |
+   |   |IV(invocation), and | claim,E:support-below-claim}; downgrade; |
+   |   |execution findings  | reasons={E_MISSING_REQUIRED_EVIDENCE};   |
+   |   |supported; no       | fatal/gaps={}.                           |
+   |   |IV(execution);      |                                          |
+   |   |ceiling execution.  |                                          |
+   +---+--------------------+------------------------------------------+
+   |C07|Assert E; execution | S=M={}; A=false; relations={};           |
+   |   |finding supported;  | downgrade;                               |
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 36]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   |   |ceiling invocation. | reasons={E_BASE_EXCEEDS_BOUNDARY};       |
+   |   |                    | fatal/gaps={}.                           |
+   +---+--------------------+------------------------------------------+
+   |C08|Assert O; no base   | S=M={}; A=false; relations={};           |
+   |   |findings; ceiling   | downgrade;                               |
+   |   |observation.        | reasons={E_MISSING_REQUIRED_EVIDENCE};   |
+   |   |                    | fatal/gaps={}.                           |
+   +---+--------------------+------------------------------------------+
+   |C09|Assert inadmissible | reject; semantics_version=wexp-core-1;   |
+   |   |intent+PROV.        | fatal={E_CLAIM_OUT_OF_DOMAIN}; S=M={};   |
+   |   |                    | A=false; support                         |
+   |   |                    | entries/relations/reasons/gaps={};       |
+   |   |                    | target/asserted claim/boundary ceiling/  |
+   |   |                    | boundary grounding/recorder relations/   |
+   |   |                    | counter evidence/inherited limitations/  |
+   |   |                    | evaluation context/evaluation            |
+   |   |                    | scope=unavailable.                       |
+   +---+--------------------+------------------------------------------+
+   |C10|Assert I; intent    | S=M={I}; A=true; relations={I:equal};    |
+   |   |supported; ceiling  | downgrade;                               |
+   |   |intent; one         | reasons={E_COUNTER_EVIDENCE_UNRESOLVED}; |
+   |   |counter-evidence    | fatal/gaps={}.                           |
+   |   |entry has status    |                                          |
+   |   |unresolved-material |                                          |
+   |   |affecting I and     |                                          |
+   |   |empty reasons.      |                                          |
+   +---+--------------------+------------------------------------------+
+   |C11|Target is chain T;  | S=M={E}; A=true; relations={E:equal};    |
+   |   |assert E.  Exact    | accept; fatal/reasons/gaps={}. The       |
+   |   |execution premises  | execution support entry basis is         |
+   |   |s1 and s2,          | {bd,s1,s2,adj,w}.                        |
+   |   |adjacency adj, and  |                                          |
+   |   |warrant w are       |                                          |
+   |   |supported; the      |                                          |
+   |   |composition profile |                                          |
+   |   |emits an execution  |                                          |
+   |   |finding with bases  |                                          |
+   |   |{s1,s2,adj,w};      |                                          |
+   |   |ceiling execution.  |                                          |
+   +---+--------------------+------------------------------------------+
+   |C12|Same as C11;        | S=M={E}; A=true; relations={E:equal};    |
+   |   |boundary and a      | accept; gaps={};                         |
+   |   |premise carry       | inherited_limitations={L-boundary};      |
+   |   |L-boundary;         | fatal/reasons={}. The support entry also |
+   |   |independent-        | carries L-boundary.  The unexercised IV  |
+   |   |verification=not-   | capability remains visible in            |
+   |   |evaluated; no       | evaluation_scope but creates no claim-   |
+   |   |warrant resolves    | unrelated gap token.                     |
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 37]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   |   |either.             |                                          |
+   +---+--------------------+------------------------------------------+
+   |C13|Assert E; execution | S=M={E}; A=true; relations={E:equal};    |
+   |   |supported; ceiling  | accept; gaps={E_IV_NOT_EVALUATED};       |
+   |   |execution.  A       | fatal/reasons={};                        |
+   |   |profile gap entry   | inherited_limitations={L-upstream}.      |
+   |   |for target T and    | evaluation_gap_entries contains exactly  |
+   |   |context C has token | the supplied entry.                      |
+   |   |E_IV_NOT_EVALUATED, |                                          |
+   |   |affects E, basis    |                                          |
+   |   |u1, and limitation  |                                          |
+   |   |L-upstream.         |                                          |
+   +---+--------------------+------------------------------------------+
+   |C14|Assert E; execution | S=M={E}; A=true; relations={E:equal};    |
+   |   |supported; ceiling  | downgrade; reasons={};                   |
+   |   |execution.  One     | gaps={E_COUNTER_EVIDENCE_NOT_EVALUATED}; |
+   |   |counter entry is    | fatal={}. The gap entry affects only E;  |
+   |   |defeating for I; a  | both counter entries are preserved and   |
+   |   |separate entry is   | no E_COUNTER_EVIDENCE_DEFEATING reason   |
+   |   |not-evaluated for   | is emitted for E.                        |
+   |   |E; both have empty  |                                          |
+   |   |reasons.            |                                          |
+   +---+--------------------+------------------------------------------+
+   |C15|Assert E; execution | S=M={E}; A=true; relations={E:equal};    |
+   |   |supported; ceiling  | downgrade;                               |
+   |   |execution.  One     | reasons={E_COUNTER_EVIDENCE_UNRESOLVED,  |
+   |   |counter entry has   | P_COUNTER_FAIL}; gaps={}; fatal={}. The  |
+   |   |status unresolved-  | copied counter entry retains its scoped  |
+   |   |material, affects   | reason.                                  |
+   |   |E, has reason       |                                          |
+   |   |P_COUNTER_FAIL,     |                                          |
+   |   |basis p1, and no    |                                          |
+   |   |limitations.        |                                          |
+   +---+--------------------+------------------------------------------+
+   |C16|Assert E; execution | S=M={E}; A=true; relations={E:equal};    |
+   |   |supported; ceiling  | accept; fatal/reasons/gaps={};           |
+   |   |execution.  A       | inherited_limitations={}. The unrelated  |
+   |   |profile gap for     | profile gap and its limitation are not   |
+   |   |target T and        | projected.                               |
+   |   |context C has token |                                          |
+   |   |E_IV_NOT_EVALUATED, |                                          |
+   |   |affects only N+V,   |                                          |
+   |   |basis u2, and       |                                          |
+   |   |limitation          |                                          |
+   |   |L-unrelated.        |                                          |
+   +---+--------------------+------------------------------------------+
+
+                                  Table 2
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 38]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+14.  Security Considerations
+
+   WEXP limits inference; it does not make a dishonest or compromised
+   witness honest.  A false boundary assertion, malicious mapping
+   profile, compromised signer, or colluding evidence evaluator can
+   manufacture normalized findings unless the evaluation context
+   independently constrains those actors.
+
+   *Authenticity is not truth.* A valid signature establishes that bytes
+   verify under a key.  Key-to-identity binding attributes the
+   assertion.  Neither establishes that the action occurred, that the
+   signer controlled the claimed boundary, or that the signer was
+   authorized.
+
+   *Reference integrity is not semantic support.* A digest can bind an
+   appraisal input to artifact bytes.  It does not establish the
+   artifact's type, exact-action coverage, accepted root, or
+   independence.  Qualifier support requires the exact profile predicate
+   in Section 6.
+
+   *Boundary grounding.* A declared boundary can be false.  Appraisals
+   preserve whether it was asserted, attributed, attested, or not
+   evaluated.  Relying parties MUST NOT erase this distinction.
+
+   *Self-report.* A self-report can support a report about what the
+   actor asserted.  It does not provide third-party non-repudiation
+   merely because its content base is deep or its bytes are signed.
+
+   *Independent verification.* Independence is profile- and context-
+   relative.  Different keys or roots can remain under common
+   administrative control, while a shared public root does not
+   necessarily destroy operational independence.  A passing IV finding
+   needs an explicit assessment basis.
+
+   *Counter-evidence.* Unresolved material counter-evidence blocks
+   acceptance.  No supplied counter-evidence is not proof that none
+   exists.
+
+   *Coverage and nonoccurrence.* A set of valid records can be
+   incomplete.  A missing record can reflect omission, capture failure,
+   refusal to emit, loss, or an action that never occurred.  WEXP Core
+   does not distinguish those cases without positive profile-defined
+   evidence.
+
+
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 39]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   *Composition.* Composition is a common inflation point.  Exact
+   premises, bindings, warrants, and limitation inheritance are
+   required.  A chain appraisal cannot be used as evidence for a
+   terminal effect unless a separate predicate establishes that exact
+   claim.
+
+   *Evaluation context.* Trust anchors, profile versions, policies,
+   evaluation time, revocation state, and appraiser capabilities affect
+   findings.  The appraisal carries the evaluation context so that a
+   result is not detached from those dependencies.
+
+   *Privacy.* Even opaque targets, basis references, reason codes, and
+   timing information can enable correlation.  Carrier and evidence
+   profiles should minimize disclosure and state the confidentiality
+   properties of any commitments they use.
+
+15.  IANA Considerations
+
+   This document requests creation of a "WEXP Appraisal Reason Codes"
+   registry.  The registration policy is Specification Required as
+   defined by [RFC8126].  Each entry contains a token, category (fatal,
+   substantive, or evaluation-gap), default verdict effect, and
+   reference.
+
+   Initial entries are shown below; the reference for every initial
+   entry is this document.
+
+     +==================================+================+===========+
+     | Token                            | Category       | Default   |
+     |                                  |                | effect    |
+     +==================================+================+===========+
+     | E_MALFORMED_NORMALIZED_INPUT     | fatal          | reject    |
+     +----------------------------------+----------------+-----------+
+     | E_UNSUPPORTED_SEMANTICS_VERSION  | fatal          | reject    |
+     +----------------------------------+----------------+-----------+
+     | E_CLAIM_OUT_OF_DOMAIN            | fatal          | reject    |
+     +----------------------------------+----------------+-----------+
+     | E_UNKNOWN_CRITICAL_SEMANTIC      | fatal          | reject    |
+     +----------------------------------+----------------+-----------+
+     | E_INTEGRITY_INVALID              | fatal          | reject    |
+     +----------------------------------+----------------+-----------+
+     | E_BINDING_MISMATCH               | fatal          | reject    |
+     +----------------------------------+----------------+-----------+
+     | E_PROFILE_MAPPING_INVALID        | fatal          | reject    |
+     +----------------------------------+----------------+-----------+
+     | E_CHAIN_DESCRIPTION_INVALID      | fatal          | reject    |
+     +----------------------------------+----------------+-----------+
+     | E_CHAIN_UNBOUND                  | substantive    | downgrade |
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 40]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+     +----------------------------------+----------------+-----------+
+     | E_SHARED_VERIFICATION_ROOT       | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_BASE_EXCEEDS_BOUNDARY          | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_BOUNDARY_NOT_SUPPORTED         | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_EXACT_CLAIM_NOT_SUPPORTED      | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_MISSING_REQUIRED_EVIDENCE      | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_EVIDENCE_NOT_BOUND             | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_EVIDENCE_COVERAGE_MISMATCH     | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_PROV_NOT_SUPPORTED             | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_IV_NOT_SUPPORTED               | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_COUNTER_EVIDENCE_UNRESOLVED    | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_COUNTER_EVIDENCE_DEFEATING     | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_COMPOSITION_WARRANT_MISSING    | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_INDEPENDENCE_NOT_ESTABLISHED   | substantive    | downgrade |
+     +----------------------------------+----------------+-----------+
+     | E_BASE_NOT_EVALUATED             | evaluation-gap | downgrade |
+     |                                  |                | if needed |
+     |                                  |                | by claim  |
+     +----------------------------------+----------------+-----------+
+     | E_BOUNDARY_NOT_EVALUATED         | evaluation-gap | downgrade |
+     |                                  |                | if needed |
+     |                                  |                | by claim  |
+     +----------------------------------+----------------+-----------+
+     | E_PROV_NOT_EVALUATED             | evaluation-gap | downgrade |
+     |                                  |                | if needed |
+     |                                  |                | by claim  |
+     +----------------------------------+----------------+-----------+
+     | E_IV_NOT_EVALUATED               | evaluation-gap | downgrade |
+     |                                  |                | if needed |
+     |                                  |                | by claim  |
+     +----------------------------------+----------------+-----------+
+     | E_COMPOSITION_NOT_EVALUATED      | evaluation-gap | downgrade |
+     |                                  |                | if needed |
+     |                                  |                | by claim  |
+     +----------------------------------+----------------+-----------+
+     | E_COUNTER_EVIDENCE_NOT_EVALUATED | evaluation-gap | downgrade |
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 41]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+     |                                  |                | if        |
+     |                                  |                | material  |
+     +----------------------------------+----------------+-----------+
+
+                                  Table 3
+
+   The appraiser derives E_MALFORMED_NORMALIZED_INPUT,
+   E_UNSUPPORTED_SEMANTICS_VERSION, E_PROFILE_MAPPING_INVALID, and
+   E_CLAIM_OUT_OF_DOMAIN through the ordered checks in Section 6.2; they
+   are not valid supplied fatal conditions.  The remaining initial fatal
+   tokens can be supplied only under the exact meanings and structurally
+   usable-input rule in that section.  Carrier-specific parse or
+   extension errors are outside this Core registry and are neither
+   aliases nor automatic mappings to Core tokens.
+
+   The Designated Expert should require one unambiguous condition,
+   deterministic category and default effect, and a stable public
+   specification.  A registration that would create claim support from
+   an evaluation capability, display label, boundary name, or artifact
+   presence should be rejected.
+
+16.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/info/rfc2119>.
+
+   [RFC8126]  Cotton, M., Leiba, B., and T. Narten, "Guidelines for
+              Writing an IANA Considerations Section in RFCs", BCP 26,
+              RFC 8126, DOI 10.17487/RFC8126, June 2017,
+              <https://www.rfc-editor.org/info/rfc8126>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/info/rfc8174>.
+
+17.  Informative References
+
+   [I-D.sergeev-wexp-core-00]
+              Sergeev, M. and V. Ikher, "The Witnessed Execution
+              Protocol (WEXP): Core Specification", Work in Progress,
+              Internet-Draft, draft-sergeev-wexp-core-00, July 2026,
+              <https://datatracker.ietf.org/doc/html/draft-sergeev-wexp-
+              core-00>.
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 42]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   [RFC9334]  Birkholz, H., Thaler, D., Richardson, M., Smith, N., and
+              W. Pan, "Remote ATtestation procedureS (RATS)
+              Architecture", RFC 9334, DOI 10.17487/RFC9334, January
+              2023, <https://www.rfc-editor.org/info/rfc9334>.
+
+   [WCC-CORE] Witnessability Project, "Witnessability Conceptual Core",
+              2026, <https://witnessability.io>.
+
+   [WITNESSABILITY]
+              Sergeev, M. A. and V. Ikher, "Toward a Witnessability
+              Model for AI and Software Execution Systems, Version 1.1",
+              DOI 10.5281/zenodo.21970802, 2026,
+              <https://doi.org/10.5281/zenodo.21970802>.
+
+Appendix A.  Changes Since draft-sergeev-wexp-core-00
+
+   *  Separated carrier-neutral appraisal semantics from the Native
+      Record format.
+
+   *  Replaced scalar WL arithmetic with typed claims consisting of a
+      content base and qualifier set.
+
+   *  Made IV applicable to an exact claim at any supported base without
+      raising that base.
+
+   *  Replaced a singular verified level with an exact supported claim
+      set and maximal supported alternatives.
+
+   *  Made appraisal claim-independent and separated exact support from
+      structural order.
+
+   *  Fixed the verdict vocabulary to accept, downgrade, and reject.
+
+   *  Replaced cumulative CC arithmetic with a non-evidentiary
+      evaluation capability vector.
+
+   *  Added normative semantic vectors, exact qualifier predicates,
+      limitation inheritance, and explicit non-inference rules.
+
+Appendix B.  Disclosure
+
+   Portions of this document were developed with the assistance of
+   generative AI tools under human editorial control.  The listed
+   authors are responsible for the resulting text.
+
+Authors' Addresses
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 43]
+
+Internet-Draft                  WEXP Core                    August 2026
+
+
+   Mikhail Sergeev (editor)
+   Independent Researcher
+   Email: mikhailsergeev369@gmail.com
+
+
+   Vladimir Ikher
+   Independent Researcher
+   Email: ikherva@gmail.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sergeev & Ikher         Expires 15 February 2027               [Page 44]
