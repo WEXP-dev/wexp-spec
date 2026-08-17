@@ -45,12 +45,45 @@
   },
   "claims": [
     "The listed repository files currently match their declared SHA-256 digests.",
-    "The listed XML is byte-identical to the frozen Core-01 specification recorded under freeze identity CORE-01-FROZEN-001."
+    "The listed XML is byte-identical to the frozen Core-01 specification recorded under freeze identity CORE-01-FROZEN-001.",
+    "The XML posted by the IETF for revision 01 is byte-identical to the XML in this repository."
   ],
   "non_claims": [
-    "This manifest does not establish IETF acceptance, adoption, or publication of revision 01.",
+    "Revision 01 is posted as an Internet-Draft. That is not IETF adoption, working-group acceptance, consensus, or standardization.",
     "This manifest does not establish complete protocol correctness or independent conformance.",
     "This manifest does not claim a hosted cross-platform qualification matrix; that evidence is deferred and is not represented as passing.",
     "This manifest does not establish that the specification is an Internet Standard."
-  ]
+  ],
+  "known_publication": {
+    "identity": "draft-sergeev-wexp-core-01",
+    "datatracker_url": "https://datatracker.ietf.org/doc/draft-sergeev-wexp-core/01/",
+    "posted": "2026-08-17T01:57:17Z",
+    "expires": "2027-02-18T01:57:17Z",
+    "submission_id": "167795",
+    "pages": 44,
+    "observed_artifacts": [
+      {
+        "url": "https://datatracker.ietf.org/doc/id/draft-sergeev-wexp-core-01.xml",
+        "media_type": "application/rfc+xml",
+        "bytes": 103095,
+        "sha256": "84c0a16467585c29925339a10dd287c2e67bfe21ed592826254bf424dc24f56d",
+        "byte_identical_to_repository_xml": true
+      },
+      {
+        "url": "https://www.ietf.org/archive/id/draft-sergeev-wexp-core-01.txt",
+        "media_type": "text/plain",
+        "bytes": 108917,
+        "sha256": "50c137713a08ebba7c7b284f97107a2259c9a2d3e0eaefdaede3a77d09fa902b",
+        "byte_identical_to_repository_txt": true
+      },
+      {
+        "url": "https://www.ietf.org/archive/id/draft-sergeev-wexp-core-01.html",
+        "media_type": "text/html",
+        "bytes": 189058,
+        "sha256": "17e523ea61da7630416ea2453161854a21d50237ea7d4f02fa977096de685603",
+        "byte_identical_to_repository_html": false,
+        "note": "The IETF renders its own HTML from the submitted XML with its own toolchain; a difference here is expected and is not a difference in the specification."
+      }
+    ]
+  }
 }
