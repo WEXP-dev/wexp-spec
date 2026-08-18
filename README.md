@@ -46,6 +46,19 @@ was created, then imported here. The import and current integrity checks do not
 claim that it was published through WEXP. This repository's Git root does not
 replace or redefine the original IETF publication event.
 
+## Known issues and representation
+
+[`known-issues/CORE-01-KNOWN-ISSUES-001.md`](known-issues/CORE-01-KNOWN-ISSUES-001.md)
+is a **project-maintained** known-issues record for the posted revision `-01`.
+Core-01 is an Internet-Draft, not an RFC: this is not an RFC Editor erratum and
+does not modify the published draft. It records KI-001, a confirmed inconsistency
+between §12 and the normative fixture C14, with the project's selected
+interpretation, and KI-002, an adjacent question that remains open.
+
+[`representation/CORE-01-REPRESENTATION-CONTRACT-001.md`](representation/CORE-01-REPRESENTATION-CONTRACT-001.md)
+states how the public corpus and tooling serialize Core's logical values. It is
+carrier detail and does not amend Core semantics.
+
 ## Reporting a vulnerability
 
 See [`SECURITY.md`](SECURITY.md). Security vulnerabilities in WEXP Core should be
